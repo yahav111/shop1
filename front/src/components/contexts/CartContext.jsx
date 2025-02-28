@@ -1,4 +1,5 @@
 import { createContext, useEffect, useState } from "react";
+import axios from "axios"
 
 export const CartContext = createContext();
 
@@ -7,58 +8,98 @@ const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
 
-  function addToCart(product) {
-    // scanario 1: product already in cart
-    const index = cart.findIndex((item) => item.id === product.id);
-    if (index !== -1) {
-      const newCart = [...cart];
-      newCart[index].quantity += 1;
 
-      return setCart(newCart);
-    }
-    // scanario 2: product not in cart
-    setCart([...cart, { quantity: 1, ...product }]);
-  }
+
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const {data} = await axios.get("http://localhost:3000/products");
+        console.log(data); 
+        setCart(data); 
+      } catch (error) {
+        console.error("Failed to fetch products", error);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+
 
   useEffect(() => {
     console.log(cart);
   }, [cart]);
 
-  const DeleteCart = (product) => {
-    const copyCart = [...cart];
-    const NewCart = copyCart.filter((item) => item.id !== product.id);
-    return setCart(NewCart);
-  };
 
-  // const clickPlus = (product) => {
-  //   const copyCart = [...cart];
-  //   const index = cart.findIndex((item) => item.id === product.id);
-  //   const newCart = (copyCart[index].quantity += 1);
-  //   return setCart(newCart);
-  // };
 
-  const clickPlus = (product) => {
-    const copyCart = [...cart];
-    const index = copyCart.findIndex((item) => item.id === product.id);
-    if (index !== -1) {
-      copyCart[index].quantity += 1;
-      // console.log(copyCart);
-      setCart(copyCart);
+   const DeleteCart = async (product) => {
+    try {
+      await axios.delete(`http://localhost:3000/products/${product.id}`); 
+      const updatedCart = cart.filter((item) => item.id !== product.id);
+      setCart(updatedCart);
+    } catch (error) {
+      console.error("Failed to delete product", error);
     }
   };
 
-  const clickMinus = (product) => {
-    const copyCart = [...cart];
-    const index = copyCart.findIndex((item) => item.id === product.id);
-    if (index !== -1 && copyCart[index].quantity > 1) {
-      copyCart[index].quantity -= 1;
-      setCart(copyCart);
+
+
+  
+  const addToCart = async (product) => {
+    try {
+      const index = cart.findIndex((item) => item.id === product.id);
+      if (index !== -1) {
+        const newCart = [...cart];
+        newCart[index].quantity += 1;
+        setCart(newCart);
+    
+        await axios.put(`http://localhost:3000/products/${product.id}`, { quantity: newCart[index].quantity });
+      } else {
+        setCart([...cart, { quantity: 1, ...product }]);
+
+        await axios.post("http://localhost:3000/products", { quantity: 1, ...product });
+      }
+    } catch (error) {
+      console.error("Failed to add product to cart", error);
     }
   };
 
-  const ClearCart = () => {
-    setCart([]);
+  
+
+  
+
+  const clickPlus = async (product) => {
+    try {
+      const updatedCart = [...cart];
+      const index = updatedCart.findIndex((item) => item.id === product.id);
+      if (index !== -1) {
+        updatedCart[index].quantity += 1;
+        setCart(updatedCart);
+        await axios.put(`http://localhost:3000/products/${product.id}`, { quantity: updatedCart[index].quantity });
+      }
+    } catch (error) {
+      console.error("Failed to update product quantity", error);
+    }
   };
+  const clickMinus = async (product) => {
+    try {
+      const updatedCart = [...cart];
+      const index = updatedCart.findIndex((item) => item.id === product.id);
+      if (index !== -1 && updatedCart[index].quantity > 1) {
+        updatedCart[index].quantity -= 1;
+        setCart(updatedCart);
+        await axios.put(`http://localhost:3000/products/${product.id}`, { quantity: updatedCart[index].quantity });
+      }
+    } catch (error) {
+      console.error("Failed to update product quantity", error);
+    }
+  };
+
+
+  const ClearCart = async () => {
+      await axios.delete("http://localhost:3000/products"); 
+      setCart([]);}
+
 
   useEffect(() => {
     const newCart = [...cart];
