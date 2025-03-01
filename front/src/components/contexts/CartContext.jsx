@@ -7,9 +7,51 @@ const CartProvider = ({ children }) => {
   const [showCart, setShowCart] = useState(false);
   const [cart, setCart] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [user, setUser] = useState({ name: '', email: '', password: '' });
+  
 
 
+  const handleChange = (e) => {
+    setUser({
+      ...user,
+      [e.target.name]: e.target.value,
+    });
+  };
 
+
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await axios.post('http://localhost:3000/auth/signup', {
+        name: user.name,
+        email: user.email,
+        password: user.password,
+      });
+      alert('Sign-up successful!');
+      console.log(response.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+
+  const handleSignIn = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('http://localhost:3000/auth/signin', {
+        email: user.email,
+        password: user.password,
+      });
+      localStorage.setItem('token', response.data.token);
+      alert('Sign-in successful!');
+      console.log(response.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -107,7 +149,6 @@ const CartProvider = ({ children }) => {
       (sum, product) => sum + product.price * product.quantity,
       0
     );
-
     setTotalPrice(total);
   }, [cart]);
 
@@ -121,6 +162,9 @@ const CartProvider = ({ children }) => {
     clickMinus,
     ClearCart,
     totalPrice,
+    handleSignIn,
+    handleSignUp,
+    handleChange
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

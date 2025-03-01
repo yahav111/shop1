@@ -7,6 +7,7 @@ import OneProduct from "./components/ui/oneProduct";
 import ShoppingCarts from "./components/ui/ShoppingCarts";
 import Payment from "./components/ui/payment";
 import Login from "./components/ui/Login";
+import Signin from "./components/ui/Signin";
 
 // Hoisting
 
@@ -33,6 +34,8 @@ function App() {
             <Route path="product/:id" element={<OneProduct />} />
             <Route path="payment" element={<Payment />} />
             <Route path="home" element={<Home />} />
+            <Route path="signin" element={<Signin />} />
+
           </Route>
         </Routes>
       </BrowserRouter>

@@ -1,6 +1,13 @@
-import React from "react";
+import React, { useContext } from "react";
+import { Link } from "react-router";
+import { CartContext } from "../contexts/CartContext";
 
 const Login = () => {
+    const {
+      handleChange,
+      handleSignIn
+ 
+    } = useContext(CartContext);
   return (
     <div className="font-[sans-serif] max-sm:px-4">
       <div className="min-h-screen flex flex-col items-center justify-center ">
@@ -23,6 +30,7 @@ const Login = () => {
             <label className="text-gray-800 text-xs block mb-2">Email</label>
             <div className="relative flex items-center">
               <input
+              onChange={handleChange}
                 name="email"
                 type="text"
                 required=""
@@ -64,6 +72,7 @@ const Login = () => {
             <label className="text-gray-800 text-xs block mb-2">Password</label>
             <div className="relative flex items-center">
               <input
+              onChange={handleChange}
                 name="password"
                 type="password"
                 required=""
@@ -109,12 +118,25 @@ const Login = () => {
             </div>
           </div>
           <div className="mt-12">
-            <button
-              type="button"
-              className="w-full shadow-xl py-2.5 px-4 text-sm tracking-wide rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
-            >
-              Sign in
-            </button>
+           
+<Link to="/signin">
+  <button onClick={()=>{}}
+    type="button"
+    className="w-full shadow-xl py-2.5 px-4 text-sm tracking-wide rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+  >
+    Sign up
+  </button>
+</Link>
+
+
+<div className="mt-3">
+<button onClick={handleSignIn}
+    type="button"
+    className="w-full shadow-xl py-2.5 px-4 text-sm tracking-wide rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+  >
+    Sign in
+  </button>
+</div>
           </div>
           <div className="my-4 flex items-center gap-4">
             <hr className="w-full border-gray-300" />
