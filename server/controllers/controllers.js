@@ -1,30 +1,44 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
-export const getAllProducts = async (req, res) => {
+// export const getAllProducts = async (req, res) => {
+//   try {
+//     const products = await prisma.product.findMany();
+//     res.json(products);
+//   } catch (error) {
+//     res.status(500).json({ error: "Failed to fetch products" });
+//   }
+// };
+
+export const getUserProducts = async (req, res) => {
   try {
-    const products = await prisma.product.findMany();
+    const userId = req.query.userId?.trim();
+    console.log(userId);
+
+    if (!userId) return res.status(400).json({ error: "User ID is required" });
+
+    const products = await prisma.product.findMany({
+      where: { userId: userId },
+    });
     res.json(products);
   } catch (error) {
+    console.error("Error fetching products:", error);
     res.status(500).json({ error: "Failed to fetch products" });
   }
 };
 
-export const getProductById = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const product = await prisma.product.findUnique({
-      where: { id: Number(id) },
-    });
-    res.json(product);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch product" });
-  }
-};
-
 export const createProduct = async (req, res) => {
-  const { title, price, quantity, description, category, image, rating } =
-    req.body;
+  const {
+    title,
+    price,
+    quantity,
+    description,
+    category,
+    image,
+    rating,
+    userId,
+  } = req.body;
+
   try {
     const newProduct = await prisma.product.create({
       data: {
@@ -35,11 +49,17 @@ export const createProduct = async (req, res) => {
         category,
         image,
         rating,
+        user: {
+          connect: { id: userId },
+        },
       },
     });
+
     res.status(201).json(newProduct);
   } catch (error) {
-    res.status(500).json({ error: "Failed to create product" });
+    res
+      .status(500)
+      .json({ error: "Failed to create product", details: error.message });
   }
 };
 
@@ -49,7 +69,7 @@ export const updateProduct = async (req, res) => {
     req.body;
   try {
     const updatedProduct = await prisma.product.update({
-      where: { id: Number(id) },
+      where: { id: id },
       data: {
         title,
         price,
@@ -69,17 +89,16 @@ export const updateProduct = async (req, res) => {
 export const deleteProduct = async (req, res) => {
   const { id } = req.params;
   try {
-    await prisma.product.delete({ where: { id: Number(id) } });
+    await prisma.product.delete({ where: { id: id } });
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: "Failed to delete product" });
   }
 };
 
-
 export const clearCart = async (req, res) => {
   try {
-    await prisma.cartItem.deleteMany
+    await prisma.cartItem.deleteMany();
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: "Failed to clear cart" });

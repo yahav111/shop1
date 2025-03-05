@@ -14,7 +14,7 @@ datasource db {
 }
 
 model Product {
-  id          Int    @id @default(autoincrement())
+  id          String    @id @default(uuid()) 
   title       String
   price       Float
   quantity    Int
@@ -22,12 +22,21 @@ model Product {
   category    String
   image       String
   rating      Json
+  userId      String?  
+  user        User?    @relation(fields: [userId], references: [id]) 
+  
 }
 
+
 model User {
-  id       Int    @id @default(autoincrement())
+  id       String    @id @default(uuid()) 
   name     String
   email    String @unique
   password String
+  products Product[] 
+  resetToken       String?  
+  resetTokenExpiry DateTime?
 }
+
+
 
