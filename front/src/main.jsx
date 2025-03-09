@@ -5,9 +5,9 @@ import CartProvider from "./components/contexts/CartContext.jsx";
 import AuthProvider from "./components/contexts/AuthContext.jsx";
 
 createRoot(document.getElementById("root")).render(
-  <CartProvider>
-    <AuthProvider>
+  <AuthProvider>
+    <CartProvider>
       <App />
-    </AuthProvider>
-  </CartProvider>
+    </CartProvider>
+  </AuthProvider>
 );

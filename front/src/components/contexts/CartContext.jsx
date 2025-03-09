@@ -56,40 +56,10 @@ const CartProvider = ({ children }) => {
     }
   };
 
-  const forgotPassword = async (email) => {
-    try {
-      const res = await axios.post(
-        "http://localhost:3000/auth/forgot-password",
-        { email }
-      );
-      setMessage(res.data.message);
-      alert("Check your email for password reset instructions.");
-    } catch (error) {
-      setMessage(error.response?.data?.error || "Something went wrong!");
-    }
-  };
-
-  const resetPassword = async (email, token, newPassword) => {
-    try {
-      const res = await axios.post(
-        "http://localhost:3000/auth/reset-password",
-        {
-          email,
-          token,
-          newPassword,
-        }
-      );
-      setMessage(res.data.message);
-      alert("Password reset successful!");
-    } catch (error) {
-      setMessage(error.response?.data?.error || "Something went wrong!");
-    }
-  };
-
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const userId = localStorage.getItem("userId"); // קבלת ה-userId מה-localStorage
+        const userId = localStorage.getItem("userId");
         if (!userId) return;
 
         const { data } = await axios.get(

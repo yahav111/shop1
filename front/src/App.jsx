@@ -8,6 +8,8 @@ import ShoppingCarts from "./components/ui/ShoppingCarts";
 import Payment from "./components/ui/payment";
 import Login from "./components/ui/Login";
 import Signin from "./components/ui/Signin";
+import ForgotPassword from "./components/ui/ForgotPassword";
+import ResetPassword from "./components/ui/ResetPassword";
 
 // Hoisting
 
@@ -35,7 +37,8 @@ function App() {
             <Route path="payment" element={<Payment />} />
             <Route path="home" element={<Home />} />
             <Route path="signin" element={<Signin />} />
-
+            <Route path="Password/forgot" element={<ForgotPassword />} />
+            <Route path="Password/reset" element={<ResetPassword />} />
           </Route>
         </Routes>
       </BrowserRouter>

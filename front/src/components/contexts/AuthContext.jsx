@@ -1,31 +1,33 @@
 import { createContext, useContext, useState } from "react";
 import axios from "axios";
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
+const AuthProvider = ({ children }) => {
   const [message, setMessage] = useState("");
 
-  // Forgot Password
   const forgotPassword = async (email) => {
     try {
-      const res = await axios.post("http://localhost:5000/forgot-password", {
+      const res = await axios.post("http://localhost:3000/Password/forgot", {
         email,
       });
+      console.log(email, "email");
+
       setMessage(res.data.message);
     } catch (error) {
       setMessage(error.response?.data?.error || "Something went wrong!");
     }
   };
 
-  // Reset Password
-  const resetPassword = async (email, token, newPassword) => {
+  const resetPassword = async (newPassword, email, token) => {
+    console.log({ email: email, token: token, newPassword: newPassword });
     try {
-      const res = await axios.post("http://localhost:5000/reset-password", {
+      const res = await axios.post("http://localhost:3000/Password/reset", {
         email,
         token,
         newPassword,
       });
+
       setMessage(res.data.message);
     } catch (error) {
       setMessage(error.response?.data?.error || "Something went wrong!");
@@ -39,4 +41,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export default AuthProvider;
