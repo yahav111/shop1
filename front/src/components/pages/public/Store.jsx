@@ -3,44 +3,29 @@ import axios from "axios";
 import Products from "../../ui/Product";
 
 function Store() {
-  const url = "https://fakestoreapi.com/products";
-  const [products, setProducts] = useState([]);
+  const url = "http://localhost:3000/products";
+  const [products, setProducts] = useState({ product: [] });
 
   async function getProduct() {
     try {
       const { data } = await axios.get(url);
-      setProducts(data);
+      setProducts({ product: data });
       console.log(data);
     } catch (error) {
       console.error(error);
     }
   }
 
-  //  Mounting
   useEffect(() => {
     getProduct();
   }, []);
 
-  // const HandleAdd = (item) => {
-  //   setSideproducts((prev) => {
-  //     return [...prev, item];
-  //   });
-  //   console.log(Sideproducts);
-  //   console.log(item);
-  // };
-
   return (
     <div>
       <div className="flex justify-between items-center flex-wrap w-[90%] mx-auto">
-        {products.map((product, index) => (
+        {products.product.map((product, index) => (
           <Products key={index} product={product} />
         ))}
-      </div>
-
-      <div>
-        {/* {Sideproducts.map((sideproduct, index) => (
-          <ShoppingCarts key={index} sideproduct={sideproduct} />
-        ))} */}
       </div>
     </div>
   );

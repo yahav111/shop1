@@ -1,5 +1,6 @@
 import { createContext, useEffect, useState } from "react";
 import axios from "axios";
+import { data } from "react-router";
 
 export const CartContext = createContext();
 
@@ -49,6 +50,7 @@ const CartProvider = ({ children }) => {
 
       localStorage.setItem("userId", userId);
       setUserID(userId);
+      console.log(userId);
 
       alert("Sign-in successful!");
     } catch (err) {
@@ -63,7 +65,7 @@ const CartProvider = ({ children }) => {
         if (!userId) return;
 
         const { data } = await axios.get(
-          `http://localhost:3000/products?userId=${userId}`
+          `http://localhost:3000/products/${userId}`
         );
         setCart(data);
       } catch (error) {
@@ -79,9 +81,22 @@ const CartProvider = ({ children }) => {
 
   const DeleteCart = async (product) => {
     try {
-      await axios.delete(`http://localhost:3000/products/${product.id}`);
-      const updatedCart = cart.filter((item) => item.id !== product.id);
+      const userId = localStorage.getItem("userId");
+
+      console.log(product.productId, "Product ID");
+      console.log(userId, "User ID");
+
+      await axios.delete("http://localhost:3000/products", {
+        headers: { "Content-Type": "application/json" },
+        data: { userId, productId: product.productId },
+      });
+
+      const updatedCart = cart.filter(
+        (item) => item.productId !== product.productId
+      );
       setCart(updatedCart);
+
+      console.log("Product deleted successfully");
     } catch (error) {
       console.error("Failed to delete product", error);
     }
@@ -89,62 +104,118 @@ const CartProvider = ({ children }) => {
 
   const addToCart = async (product) => {
     try {
-      const userId = localStorage.getItem("userId"); // Get userId from localStorage
+      const userId = localStorage.getItem("userId");
+
       if (!userId) {
         alert("Please sign in first!");
         return;
       }
 
-      const index = cart.findIndex((item) => item.id === product.id);
-      if (index !== -1) {
-        const newCart = [...cart];
-        newCart[index].quantity += 1;
-        setCart(newCart);
+      setCart((prevCart) => {
+        const existingProduct = prevCart.find(
+          (item) => item.productId === product.id
+        );
 
-        await axios.put(`http://localhost:3000/products/${product.id}`, {
-          quantity: newCart[index].quantity,
-          userId,
-        });
-      } else {
-        setCart([...cart, { quantity: 1, ...product }]);
+        if (existingProduct) {
+          const updatedCart = prevCart.map((item) =>
+            item.productId === product.id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          );
 
-        await axios.post("http://localhost:3000/products", {
-          quantity: 1,
-          ...product,
-          userId,
-        });
-      }
+          axios.put(`http://localhost:3000/products/${product.id}`, {
+            userId: userId,
+            productId: product.id,
+            quantity: existingProduct.quantity + 1,
+          });
+
+          return updatedCart;
+        } else {
+          const newProduct = { ...product, quantity: 1 };
+
+          axios.post("http://localhost:3000/products", {
+            title: product.title,
+            price: product.price,
+            quantity: 1,
+            description: product.description,
+            category: product.category,
+            image: product.image,
+            rating: product.rating,
+            userId: userId,
+            productId: product.id,
+          });
+
+          return [...prevCart, newProduct];
+        }
+      });
     } catch (error) {
-      console.error("Failed to add product to cart", error);
+      console.error(
+        "Failed to add product to cart",
+        error.response?.data || error.message
+      );
     }
   };
 
   const clickPlus = async (product) => {
     try {
-      const updatedCart = [...cart];
-      const index = updatedCart.findIndex((item) => item.id === product.id);
-      if (index !== -1) {
-        updatedCart[index].quantity += 1;
-        setCart(updatedCart);
-        await axios.put(`http://localhost:3000/products/${product.id}`, {
-          quantity: updatedCart[index].quantity,
-        });
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        alert("Please sign in first!");
+        return;
       }
+
+      setCart((prevCart) => {
+        const updatedCart = prevCart.map((item) =>
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+
+        const updatedProduct = updatedCart.find(
+          (item) => item.id === product.id
+        );
+        console.log(product.productId, "ydydsu");
+
+        axios.put(`http://localhost:3000/products/${product.productId}`, {
+          userId: userId,
+          productId: product.productId,
+          quantity: updatedProduct.quantity, // Updated quantity
+        });
+
+        return updatedCart;
+      });
     } catch (error) {
       console.error("Failed to update product quantity", error);
     }
   };
+
   const clickMinus = async (product) => {
     try {
-      const updatedCart = [...cart];
-      const index = updatedCart.findIndex((item) => item.id === product.id);
-      if (index !== -1 && updatedCart[index].quantity > 1) {
-        updatedCart[index].quantity -= 1;
-        setCart(updatedCart);
-        await axios.put(`http://localhost:3000/products/${product.id}`, {
-          quantity: updatedCart[index].quantity,
-        });
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        alert("Please sign in first!");
+        return;
       }
+
+      setCart((prevCart) => {
+        const updatedCart = prevCart.map((item) =>
+          item.id === product.id && item.quantity > 1
+            ? { ...item, quantity: item.quantity - 1 }
+            : item
+        );
+
+        const updatedProduct = updatedCart.find(
+          (item) => item.id === product.id
+        );
+
+        axios.put(`http://localhost:3000/products/${product.productId}`, {
+          userId: userId,
+          productId: product.productId,
+          quantity: updatedProduct?.quantity || 1, // Ensure it doesn't go below 1
+        });
+
+        return updatedCart;
+      });
     } catch (error) {
       console.error("Failed to update product quantity", error);
     }

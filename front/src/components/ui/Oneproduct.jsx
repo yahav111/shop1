@@ -3,14 +3,16 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 
 function OneProduct() {
-  const { id } = useParams();
+  const { productId } = useParams();
   const [product, setProduct] = useState(null);
 
   const getProductDetails = async () => {
     try {
       const { data } = await axios.get(
-        `https://fakestoreapi.com/products/${id}`
+        `http://localhost:3000/products/${productId}`
       );
+      console.log(data);
+
       setProduct(data);
     } catch (error) {
       console.error(error);
@@ -19,7 +21,7 @@ function OneProduct() {
 
   useEffect(() => {
     getProductDetails();
-  }, [id]);
+  }, [productId]);
 
   return (
     <div className="w-[40%] mx-auto p-5 h-[40%] mx-auto p-5">
