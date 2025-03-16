@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { CartContext } from "../contexts/CartContext";
 
 function Product({ product }) {
-
   const { addToCart } = useContext(CartContext);
   return (
     <div>
@@ -12,7 +11,7 @@ function Product({ product }) {
           <img
             className="rounded-t-lg"
             src={product.image}
-            alt={product.title}
+            // alt={product.title}
           />
           <div className="p-5">
             <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
