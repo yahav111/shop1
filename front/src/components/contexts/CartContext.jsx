@@ -14,26 +14,6 @@ const CartProvider = ({ children }) => {
   const [user, setUser] = useState({ name: "", email: "", password: "" });
   const [UserID, setUserID] = useState("");
 
-  const getUserIdFromToken = () => {
-    const token = Cookies.get("authToken");
-    console.log("Token from Cookies:", token);
-    console.log(document.cookie, "fbdf");
-
-    if (!token) {
-      console.warn("No token found in cookies");
-      return null;
-    }
-
-    try {
-      const decoded = jwtDecode(token);
-      console.log("Decoded Token:", decoded);
-      return decoded.userId;
-    } catch (error) {
-      console.error("Error decoding token:", error);
-      return null;
-    }
-  };
-
   const handleChange = (e) => {
     setUser({
       ...user,
@@ -66,7 +46,7 @@ const CartProvider = ({ children }) => {
           email: user.email,
           password: user.password,
         },
-        { credentials: true }
+        { withCredentials: true }
       );
 
       const token = response.data.token;
@@ -88,11 +68,9 @@ const CartProvider = ({ children }) => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const userId = getUserIdFromToken();
-        if (!userId) return;
 
         const { data } = await axios.get(
-          `http://localhost:3000/products/${userId}`,
+          `http://localhost:3000/products/s`,
           { withCredentials: true }
         );
         setCart(data);
