@@ -3,7 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import productRoutes from "./routes/productRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
-import PasswordRoutes from "./routes/PasswordRoutes.js";
+import PasswordRoutes from "./routes/passwordRoutes.js";
 
 const app = express();
 const PORT = 3000;

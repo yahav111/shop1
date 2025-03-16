@@ -13,30 +13,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String    @id @default(uuid()) 
+  name         String
+  email        String    @unique
+  password     String
+  userProducts UserProducts[]  
+}
+
 model Product {
-  id          String    @id @default(uuid()) 
+  id          String   @id @default(uuid())  
+  productId   String   @unique  
   title       String
   price       Float
-  quantity    Int
   description String
   category    String
   image       String
   rating      Json
-  userId      String?  
-  user        User?    @relation(fields: [userId], references: [id]) 
-  
+
+  userProducts UserProducts[] 
+}
+
+model dbProduct {
+  id          String  @id  
+  title       String
+  price       Float
+  description String
+  category    String
+  image       String
+  rating      Json
+}
+
+model UserProducts {
+  id        String  @id @default(uuid())
+  userId    String
+  productId String
+  quantity  Int
+  user      User    @relation(fields: [userId], references: [id])
+  product   Product @relation(fields: [productId], references: [productId]) 
+
+  @@unique([productId, userId]) 
 }
 
 
-model User {
-  id       String    @id @default(uuid()) 
-  name     String
-  email    String @unique
-  password String
-  products Product[] 
-  resetToken       String?  
-  resetTokenExpiry DateTime?
-}
 
 
 
