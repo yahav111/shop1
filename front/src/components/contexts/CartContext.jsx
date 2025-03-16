@@ -1,5 +1,8 @@
 import { createContext, useEffect, useState } from "react";
 import axios from "axios";
+import Cookies from "js-cookie";
+import { jwtDecode } from "jwt-decode";
+
 import { data } from "react-router";
 
 export const CartContext = createContext();
@@ -10,6 +13,26 @@ const CartProvider = ({ children }) => {
   const [totalPrice, setTotalPrice] = useState(0);
   const [user, setUser] = useState({ name: "", email: "", password: "" });
   const [UserID, setUserID] = useState("");
+
+  const getUserIdFromToken = () => {
+    const token = Cookies.get("authToken");
+    console.log("Token from Cookies:", token);
+    console.log(document.cookie, "fbdf");
+
+    if (!token) {
+      console.warn("No token found in cookies");
+      return null;
+    }
+
+    try {
+      const decoded = jwtDecode(token);
+      console.log("Decoded Token:", decoded);
+      return decoded.userId;
+    } catch (error) {
+      console.error("Error decoding token:", error);
+      return null;
+    }
+  };
 
   const handleChange = (e) => {
     setUser({
@@ -37,10 +60,14 @@ const CartProvider = ({ children }) => {
   const handleSignIn = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:3000/auth/signin", {
-        email: user.email,
-        password: user.password,
-      });
+      const response = await axios.post(
+        "http://localhost:3000/auth/signin",
+        {
+          email: user.email,
+          password: user.password,
+        },
+        { credentials: true }
+      );
 
       const token = response.data.token;
       localStorage.setItem("token", token);
@@ -61,19 +88,21 @@ const CartProvider = ({ children }) => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const userId = localStorage.getItem("userId");
+        const userId = getUserIdFromToken();
         if (!userId) return;
 
         const { data } = await axios.get(
-          `http://localhost:3000/products/${userId}`
+          `http://localhost:3000/products/${userId}`,
+          { withCredentials: true }
         );
         setCart(data);
       } catch (error) {
         console.error("Failed to fetch products", error);
       }
     };
+
     fetchProducts();
-  }, [UserID]);
+  }, []);
 
   useEffect(() => {
     console.log(cart);
@@ -104,12 +133,7 @@ const CartProvider = ({ children }) => {
 
   const addToCart = async (product) => {
     try {
-      const userId = localStorage.getItem("userId");
-
-      if (!userId) {
-        alert("Please sign in first!");
-        return;
-      }
+      const userId = getUserIdFromToken();
 
       setCart((prevCart) => {
         const existingProduct = prevCart.find(
@@ -124,7 +148,7 @@ const CartProvider = ({ children }) => {
           );
 
           axios.put(`http://localhost:3000/products/${product.id}`, {
-            userId: userId,
+            userId,
             productId: product.id,
             quantity: existingProduct.quantity + 1,
           });
@@ -141,7 +165,7 @@ const CartProvider = ({ children }) => {
             category: product.category,
             image: product.image,
             rating: product.rating,
-            userId: userId,
+            userId,
             productId: product.id,
           });
 
