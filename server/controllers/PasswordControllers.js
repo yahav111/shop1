@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
 
@@ -52,11 +53,7 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   const { newPassword, email, token } = req.body;
 
-  console.log({
-    token,
-    email,
-    newPassword,
-  });
+  console.log({ token, email, newPassword });
 
   try {
     const user = await prisma.user.findUnique({ where: { email } });
@@ -85,6 +82,21 @@ export const resetPassword = async (req, res) => {
       },
     });
 
+    const jwtToken = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
+
+    res.cookie("authToken", jwtToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    
     res.json({ message: "Password reset successful" });
   } catch (error) {
     console.error(error);
