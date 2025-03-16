@@ -14,12 +14,15 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(uuid()) 
-  name         String
-  email        String    @unique
-  password     String
-  userProducts UserProducts[]  
+  id               String         @id @default(uuid()) 
+  name             String
+  email            String         @unique
+  password         String
+  resetToken       String?        
+  resetTokenExpiry DateTime?      
+  userProducts     UserProducts[]
 }
+
 
 model Product {
   id          String   @id @default(uuid())  

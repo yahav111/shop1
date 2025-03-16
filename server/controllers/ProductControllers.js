@@ -11,7 +11,13 @@ export const getAllProducts = async (req, res) => {
 };
 
 export const getUserCart = async (req, res) => {
-  const { userId } = req.params;
+  const userId = req.cookies;
+  console.log(userId, "useridd");
+
+  if (!userId) {
+    return res.status(400).json({ error: "User ID not found in cookies" });
+  }
+
   try {
     const UserProducts = await prisma.userProducts.findMany({
       where: { userId },
@@ -48,17 +54,25 @@ export const createProduct = async (req, res) => {
       category,
       image,
       rating,
-      userId,
       productId,
     } = req.body;
+
+    const userId = req.cookies.userId;
+
+    if (!userId) {
+      return res.status(400).json({
+        error: "UserId is required in the cookies",
+      });
+    }
+
     console.log(userId, "yaga");
     console.log(productId);
     console.log(price);
     console.log(title);
 
-    if (!title || !price || !userId || !productId) {
+    if (!title || !price || !productId) {
       return res.status(400).json({
-        error: "Title, price, userId, and productId are required",
+        error: "Title, price, and productId are required",
       });
     }
 
