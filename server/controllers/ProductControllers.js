@@ -57,100 +57,41 @@ export const createProduct = async (req, res) => {
       productId,
     } = req.body;
 
-    const userId = req.cookies.userId;
+    // const userId = req.cookies.userId;
 
-    if (!userId) {
-      return res.status(400).json({
-        error: "UserId is required in the cookies",
-      });
-    }
+    // if (!title || !price || !productId) {
+    //   return res.status(400).json({
+    //     error: "Title, price, and productId are required",
+    //   });
+    // }
 
-    console.log(userId, "yaga");
-    console.log(productId);
-    console.log(price);
-    console.log(title);
+    // const existingUser = await prisma.user.findUnique({
+    //   where: { id: userId },
+    // });
 
-    if (!title || !price || !productId) {
-      return res.status(400).json({
-        error: "Title, price, and productId are required",
-      });
-    }
-
-    const existingUser = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!existingUser) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    // 🔹 בדוק אם המוצר קיים ב-dbProduct
-    const existingDbProduct = await prisma.dbProduct.findUnique({
-      where: { id: productId },
-    });
-
-    if (!existingDbProduct) {
-      return res.status(404).json({ error: "dbProduct not found" });
-    }
+    // if (!existingUser) {
+    //   return res.status(404).json({ error: "User not found" });
+    // }
 
     // 🔹 בדוק אם המוצר כבר קיים בטבלת `Product`
-    let existingProduct = await prisma.product.findUnique({
-      where: { productId },
-    });
+    // let existingProduct = await prisma.product.findUnique({
+    //   where: { productId },
+    // });
 
     // אם המוצר לא קיים - צור אותו
-    if (!existingProduct) {
-      existingProduct = await prisma.product.create({
-        data: {
-          productId, // שומר את ה-ID של dbProduct
-          title,
-          price,
-          description,
-          category,
-          image,
-          rating,
-        },
-      });
-    }
-
-    // 🔹 בדוק אם המוצר כבר קיים אצל המשתמש ב-UserProducts
-    const existingUserProduct = await prisma.userProducts.findUnique({
-      where: {
-        productId_userId: {
-          productId,
-          userId,
-        },
-      },
-    });
-
-    if (existingUserProduct) {
-      // 🔄 אם המוצר כבר קיים - עדכן את הכמות
-      const updatedUserProduct = await prisma.userProducts.update({
-        where: {
-          productId_userId: {
-            productId,
-            userId,
-          },
-        },
-        data: {
-          quantity: existingUserProduct.quantity + (quantity || 1),
-        },
-      });
-
-      return res.status(200).json({
-        product: updatedUserProduct,
-        message: "Product quantity updated successfully",
-      });
-    }
-
-    // 🔹 אם המוצר לא קיים אצל המשתמש, צור אותו
-    const userProduct = await prisma.userProducts.create({
-      data: {
-        userId,
-        productId: existingProduct.productId,
-        quantity: quantity || 1,
-      },
-    });
+    // if (!existingProduct) {
+    //   existingProduct = await prisma.product.create({
+    //     data: {
+    //       productId, // שומר את ה-ID של dbProduct
+    //       title,
+    //       price,
+    //       description,
+    //       category,
+    //       image,
+    //       rating,
+    //     },
+    //   });
+    // }
 
     res.status(201).json({
       product: { ...existingProduct, quantity: userProduct.quantity },

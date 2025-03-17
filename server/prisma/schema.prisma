@@ -23,7 +23,7 @@ model User {
   userProducts     UserProducts[]
 }
 
-
+// STORE
 model Product {
   id          String   @id @default(uuid())  
   productId   String   @unique  
@@ -47,6 +47,7 @@ model dbProduct {
   rating      Json
 }
 
+// CART
 model UserProducts {
   id        String  @id @default(uuid())
   userId    String

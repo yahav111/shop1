@@ -25,7 +25,7 @@ const CartProvider = ({ children }) => {
     e.preventDefault();
 
     try {
-      const response = await axios.post("http://localhost:3000/auth/signup", {
+      const response = await axios.post("/auth/signup", {
         name: user.name,
         email: user.email,
         password: user.password,
@@ -41,7 +41,7 @@ const CartProvider = ({ children }) => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:3000/auth/signin",
+        "/auth/signin",
         {
           email: user.email,
           password: user.password,
