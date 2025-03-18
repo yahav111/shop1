@@ -1,9 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
 export const getAllProducts = async (req, res) => {
   try {
-    const products = await prisma.dbProduct.findMany();
+    const userId = req.cookies.authToken;
+    console.log(userId, "userid");
+    const products = await prisma.product.findMany();
     res.json(products);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch products" });
@@ -11,91 +16,149 @@ export const getAllProducts = async (req, res) => {
 };
 
 export const getUserCart = async (req, res) => {
-  const userId = req.cookies;
-  console.log(userId, "useridd");
-
-  if (!userId) {
-    return res.status(400).json({ error: "User ID not found in cookies" });
-  }
-
   try {
-    const UserProducts = await prisma.userProducts.findMany({
-      where: { userId },
-      include: { product: true },
+    const userId = req.cookies.authToken;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized: No token provided" });
+    }
+
+    // Verify JWT token and extract user ID
+    const decodedToken = jwt.verify(userId, JWT_SECRET);
+    const userIdVerify = decodedToken.userId;
+
+    // Find the user
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userIdVerify },
     });
-    res.json(UserProducts);
+
+    if (!existingUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Get all products linked to the user
+    const userProducts = await prisma.userProducts.findMany({
+      where: { userId: userIdVerify },
+      include: { product: true }, // Include product details
+    });
+
+    res.status(200).json({ products: userProducts });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch cart items" });
+    console.error("Error fetching user products:", error);
+    res.status(500).json({
+      error: "Failed to fetch user products",
+      details: error.message,
+    });
   }
 };
 
-// export const getproduct = async (req, res) => {
-//   const { productId } = req.params;
-//   console.log(productId, "bfdbd");
-
-//   try {
-//     const UserProducts = await prisma.userProducts.findMany({
-//       where: { productId },
-//       include: { user: true },
-//     });
-//     res.json(UserProducts);
-//   } catch (error) {
-//     res.status(500).json({ error: "Failed to fetch cart items" });
-//   }
-// };
-
 export const createProduct = async (req, res) => {
   try {
-    const {
-      title,
-      price,
-      quantity,
-      description,
-      category,
-      image,
-      rating,
-      productId,
-    } = req.body;
+    const { productId, title, price, description, category, image, rating } =
+      req.body;
 
-    // const userId = req.cookies.userId;
+    const newProduct = await prisma.product.create({
+      data: {
+        productId,
+        title,
+        price,
+        description,
+        category,
+        image,
+        rating,
+      },
+    });
 
-    // if (!title || !price || !productId) {
-    //   return res.status(400).json({
-    //     error: "Title, price, and productId are required",
-    //   });
-    // }
+    res.status(201).json(newProduct);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Error creating product", details: error.message });
+  }
+};
 
-    // const existingUser = await prisma.user.findUnique({
-    //   where: { id: userId },
-    // });
+export const createUserProduct = async (req, res) => {
+  try {
+    const { title, price, description, category, image, rating, productId } =
+      req.body;
 
-    // if (!existingUser) {
-    //   return res.status(404).json({ error: "User not found" });
-    // }
+    const userId = req.cookies.authToken;
+    const userIdVerify = jwt.verify(userId, JWT_SECRET);
+    const userIdVerify2 = userIdVerify.userId;
+    console.log(userId, "userId");
+    console.log(userIdVerify, "userIdVerify");
+    console.log(userIdVerify2, "gghehdtd");
 
-    // 🔹 בדוק אם המוצר כבר קיים בטבלת `Product`
-    // let existingProduct = await prisma.product.findUnique({
-    //   where: { productId },
-    // });
+    if (!title || !price || !productId) {
+      return res.status(400).json({
+        error: "Title, price, productId are required",
+      });
+    }
 
-    // אם המוצר לא קיים - צור אותו
-    // if (!existingProduct) {
-    //   existingProduct = await prisma.product.create({
-    //     data: {
-    //       productId, // שומר את ה-ID של dbProduct
-    //       title,
-    //       price,
-    //       description,
-    //       category,
-    //       image,
-    //       rating,
-    //     },
-    //   });
-    // }
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userIdVerify2 },
+    });
 
+    if (!existingUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Check if the product already exists in the product table
+    let existingProduct = await prisma.product.findUnique({
+      where: { productId },
+    });
+
+    // If product does not exist, create it
+    if (!existingProduct) {
+      existingProduct = await prisma.product.create({
+        data: {
+          productId,
+          title,
+          price,
+          description,
+          category,
+          image,
+          rating,
+        },
+      });
+    }
+
+    // Check if the user already has this product in their cart (UserProducts)
+    let userProduct = await prisma.userProducts.findUnique({
+      where: {
+        productId_userId: {
+          productId: existingProduct.productId,
+          userId: existingUser.id,
+        },
+      },
+    });
+
+    // If the user does not have the product in their cart, add it with quantity = 1
+    if (!userProduct) {
+      userProduct = await prisma.userProducts.create({
+        data: {
+          userId: existingUser.id,
+          productId: existingProduct.productId,
+          quantity: 1, // Always start with 1 item when adding to cart
+        },
+      });
+    } else {
+      // If the product is already in the cart, increment the quantity by 1
+      userProduct = await prisma.userProducts.update({
+        where: {
+          id: userProduct.id,
+        },
+        data: {
+          quantity: userProduct.quantity + 1, // Increment by 1 when updating
+        },
+      });
+    }
+
+    // Respond with the updated or created product
     res.status(201).json({
       product: { ...existingProduct, quantity: userProduct.quantity },
-      message: "Product created successfully",
+      message: "Product added to user cart successfully",
     });
   } catch (error) {
     console.error("Error creating or updating product:", error);

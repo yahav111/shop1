@@ -37,16 +37,6 @@ model Product {
   userProducts UserProducts[] 
 }
 
-model dbProduct {
-  id          String  @id  
-  title       String
-  price       Float
-  description String
-  category    String
-  image       String
-  rating      Json
-}
-
 // CART
 model UserProducts {
   id        String  @id @default(uuid())

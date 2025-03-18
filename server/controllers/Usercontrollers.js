@@ -68,3 +68,18 @@ export const signIn = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const verifyToken = (req, res) => {
+  const token = req.cookies.authToken;
+
+  if (!token) {
+    return res.status(401).json({ error: "No token provided" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    res.json({ tokenExists: true });
+  } catch (error) {
+    return res.status(401).json({ tokenExists: false });
+  }
+};
