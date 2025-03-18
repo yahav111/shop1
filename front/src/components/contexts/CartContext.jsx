@@ -53,11 +53,11 @@ const CartProvider = ({ children }) => {
       localStorage.setItem("token", token);
 
       const payload = JSON.parse(atob(token.split(".")[1]));
-      const userId = payload.userId;
+      // const userId = payload.userId;
 
-      localStorage.setItem("userId", userId);
-      setUserID(userId);
-      console.log(userId);
+      // localStorage.setItem("userId", userId);
+      // setUserID(userId);
+      // console.log(userId);
 
       alert("Sign-in successful!");
     } catch (err) {
@@ -68,11 +68,9 @@ const CartProvider = ({ children }) => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-
-        const { data } = await axios.get(
-          `http://localhost:3000/products/s`,
-          { withCredentials: true }
-        );
+        const { data } = await axios.get(`http://localhost:3000/products`, {
+          withCredentials: true,
+        });
         setCart(data);
       } catch (error) {
         console.error("Failed to fetch products", error);

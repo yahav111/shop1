@@ -1,9 +1,34 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { Link } from "react-router";
 import { CartContext } from "../contexts/CartContext";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { FiLogOut } from "react-icons/fi";
 
 function Nav() {
+  const navigate = useNavigate();
   const { setShowCart } = useContext(CartContext);
+
+  useEffect(() => {
+    const verifyToken = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/auth/me", {
+          withCredentials: true,
+        });
+        console.log(response.data, "fgfb");
+
+        if (response.data.tokenExists) {
+          navigate("/store");
+        } else {
+          navigate("/");
+        }
+      } catch (error) {
+        navigate("/");
+      }
+    };
+
+    verifyToken();
+  }, []);
 
   return (
     <>
@@ -23,6 +48,15 @@ function Nav() {
             </span>
           </a>
           <div className="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
+            <button
+              type="button"
+              className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-xs px-3 py-1.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transform -translate-x-7"
+            >
+              <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">
+                <FiLogOut />
+              </span>
+            </button>
+
             <button
               type="button"
               onClick={() => setShowCart((prev) => !prev)}

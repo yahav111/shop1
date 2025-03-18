@@ -1,4 +1,5 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+
 import axios from "axios";
 
 export const AuthContext = createContext();
@@ -11,7 +12,6 @@ const AuthProvider = ({ children }) => {
       const res = await axios.post("http://localhost:3000/Password/forgot", {
         email,
       });
-      console.log(email, "email");
 
       setMessage(res.data.message);
     } catch (error) {
@@ -20,7 +20,6 @@ const AuthProvider = ({ children }) => {
   };
 
   const resetPassword = async (newPassword, email, token) => {
-    console.log({ email: email, token: token, newPassword: newPassword });
     try {
       const res = await axios.post("http://localhost:3000/Password/reset", {
         email,
