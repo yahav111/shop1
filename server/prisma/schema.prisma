@@ -21,9 +21,9 @@ model User {
   resetToken       String?        
   resetTokenExpiry DateTime?      
   userProducts     UserProducts[]
+  orders           Order[]  
 }
 
-// STORE
 model Product {
   id          String   @id @default(uuid())  
   productId   String   @unique  
@@ -35,9 +35,9 @@ model Product {
   rating      Json
 
   userProducts UserProducts[] 
+  orderItems   OrderItem[]  
 }
 
-// CART
 model UserProducts {
   id        String  @id @default(uuid())
   userId    String
@@ -47,6 +47,23 @@ model UserProducts {
   product   Product @relation(fields: [productId], references: [productId]) 
 
   @@unique([productId, userId]) 
+}
+
+model Order {
+  id         String        @id @default(uuid())  
+  userId     String
+  createdAt  DateTime      @default(now())  
+  user       User          @relation(fields: [userId], references: [id])
+  orderItems OrderItem[]  
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [productId])
 }
 
 

@@ -77,9 +77,17 @@ export const verifyToken = (req, res) => {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
     res.json({ tokenExists: true });
   } catch (error) {
     return res.status(401).json({ tokenExists: false });
   }
+};
+
+export const logout = (req, res) => {
+  res.clearCookie("authToken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Strict",
+  });
+  res.json({ message: "Logged out successfully" });
 };

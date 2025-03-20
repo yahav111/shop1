@@ -169,45 +169,103 @@ export const createUserProduct = async (req, res) => {
   }
 };
 
-export const updateProduct = async (req, res) => {
+export const updateUserProduct = async (req, res) => {
   try {
-    const { userId, productId, quantity } = req.body;
+    const { productId, title, price, description, category, image, rating } =
+      req.body;
 
-    if (!userId || !productId || quantity == null) {
-      return res
-        .status(400)
-        .json({ error: "userId, productId, and quantity are required" });
-    }
+    // Verify user authentication
+    const userId = req.cookies.authToken;
+    const userIdVerify = jwt.verify(userId, JWT_SECRET);
+    const userIdVerify2 = userIdVerify.userId;
 
-    const existingUserProduct = await prisma.userProducts.findUnique({
-      where: {
-        productId_userId: { productId, userId },
-      },
+    console.log(userId, "userId");
+    console.log(userIdVerify, "userIdVerify");
+    console.log(userIdVerify2, "userIdVerify2");
+
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userIdVerify2 },
     });
 
-    if (!existingUserProduct) {
-      return res.status(404).json({ error: "Product not found for this user" });
+    if (!existingUser) {
+      return res.status(404).json({ error: "User not found" });
     }
 
-    const updatedUserProduct = await prisma.userProducts.update({
-      where: {
-        productId_userId: { productId, userId },
+    // Check if product exists
+    const existingProduct = await prisma.product.findUnique({
+      where: { productId },
+    });
+
+    if (!existingProduct) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    // Update product details
+    const updatedProduct = await prisma.product.update({
+      where: { productId },
+      data: {
+        title: title || existingProduct.title,
+        price: price || existingProduct.price,
+        description: description || existingProduct.description,
+        category: category || existingProduct.category,
+        image: image || existingProduct.image,
+        rating: rating || existingProduct.rating,
       },
-      data: { quantity },
     });
 
     res.status(200).json({
-      product: updatedUserProduct,
-      message: "Product quantity updated successfully",
+      product: updatedProduct,
+      message: "Product updated successfully",
     });
   } catch (error) {
-    console.error("Error updating product quantity:", error);
+    console.error("Error updating product:", error);
     res.status(500).json({
-      error: "Failed to update product quantity",
+      error: "Failed to update product",
       details: error.message,
     });
   }
 };
+
+// export const updateProduct = async (req, res) => {
+//   try {
+//     const { userId, productId, quantity } = req.body;
+
+//     if (!userId || !productId || quantity == null) {
+//       return res
+//         .status(400)
+//         .json({ error: "userId, productId, and quantity are required" });
+//     }
+
+//     const existingUserProduct = await prisma.userProducts.findUnique({
+//       where: {
+//         productId_userId: { productId, userId },
+//       },
+//     });
+
+//     if (!existingUserProduct) {
+//       return res.status(404).json({ error: "Product not found for this user" });
+//     }
+
+//     const updatedUserProduct = await prisma.userProducts.update({
+//       where: {
+//         productId_userId: { productId, userId },
+//       },
+//       data: { quantity },
+//     });
+
+//     res.status(200).json({
+//       product: updatedUserProduct,
+//       message: "Product quantity updated successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error updating product quantity:", error);
+//     res.status(500).json({
+//       error: "Failed to update product quantity",
+//       details: error.message,
+//     });
+//   }
+// };
 
 export const deleteProduct = async (req, res) => {
   try {

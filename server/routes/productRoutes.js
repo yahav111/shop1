@@ -3,7 +3,7 @@ import {
   getAllProducts,
   getUserCart,
   createUserProduct,
-  updateProduct,
+  updateUserProduct,
   deleteProduct,
   createProduct,
   clearCart,
@@ -19,7 +19,7 @@ router.post("/", createProduct);
 // create UserProducts when user add Product to the cart - Model UserProducts
 router.post("/addToCart", createUserProduct);
 
-router.put("/:userId", updateProduct);
+router.put("/", updateUserProduct);
 router.delete("/", deleteProduct);
 router.delete("/", clearCart);
 
