@@ -1,7 +1,5 @@
 import { createContext, useEffect, useState } from "react";
 import axios from "axios";
-import Cookies from "js-cookie";
-import { jwtDecode } from "jwt-decode";
 
 import { data } from "react-router";
 
@@ -12,7 +10,7 @@ const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const [user, setUser] = useState({ name: "", email: "", password: "" });
-  const [UserID, setUserID] = useState("");
+  const [userCart, setuserCart] = useState([]);
 
   const handleChange = (e) => {
     setUser({
@@ -37,6 +35,24 @@ const CartProvider = ({ children }) => {
     }
   };
 
+  // const generateAccessToken = async () => {
+  //   try {
+  //     const { data } = await axios.post(
+  //       "https://api-m.sandbox.paypal.com/v1/oauth2/token",
+  //       "grant_type=client_credentials",
+  //       {
+  //         auth: {
+  //           username: process.env.PAYPAL_CLIENT_ID,
+  //           password: process.env.PAYPAL_SECRET,
+  //         },
+  //       }
+  //     );
+  //     return data.access_token;
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
+
   const handleSignIn = async (e) => {
     e.preventDefault();
     try {
@@ -48,41 +64,68 @@ const CartProvider = ({ children }) => {
         },
         { withCredentials: true }
       );
+      console.log(response.data, "yahav");
 
-      const token = response.data.token;
-      localStorage.setItem("token", token);
-
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      // const userId = payload.userId;
-
-      // localStorage.setItem("userId", userId);
-      // setUserID(userId);
-      // console.log(userId);
-
-      alert("Sign-in successful!");
+      if (response.data.message) {
+        alert("Sign-in successful!");
+        window.location.href = "http://localhost:5173/store";
+      } else {
+        alert("Sign-in failed: Token does not exist.");
+      }
     } catch (err) {
       console.error("Sign-in failed", err);
     }
   };
 
   useEffect(() => {
+    const fetchUserProducts = async () => {
+      try {
+        const { data } = await axios.get(
+          `http://localhost:3000/products/userId`,
+          {
+            withCredentials: true,
+          }
+        );
+        const products = data.products;
+        console.log(products);
+
+        // Ensure that the data is an array
+        if (Array.isArray(products)) {
+          setuserCart(products);
+        } else {
+          console.error("Data is not an array 2:", data.products);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user products", error);
+      }
+    };
+
     const fetchProducts = async () => {
       try {
         const { data } = await axios.get(`http://localhost:3000/products`, {
           withCredentials: true,
         });
-        setCart(data);
+
+        // Ensure that the data is an array
+        if (Array.isArray(data)) {
+          setCart(data);
+          console.log(data, "products only fetch");
+        } else {
+          console.error("Data is not an array:", data);
+        }
       } catch (error) {
-        console.error("Failed to fetch products", error);
+        console.error("Failed to fetch all products", error);
       }
     };
 
+    // Fetch products from both sources
+    fetchUserProducts();
     fetchProducts();
   }, []);
 
-  useEffect(() => {
-    console.log(cart);
-  }, [cart]);
+  // useEffect(() => {
+  //   console.log(cart);
+  // }, [cart]);
 
   const DeleteCart = async (product) => {
     try {
@@ -109,11 +152,11 @@ const CartProvider = ({ children }) => {
 
   const addToCart = async (product) => {
     try {
-      const userId = getUserIdFromToken();
+      console.log(product, "product");
 
       setCart((prevCart) => {
         const existingProduct = prevCart.find(
-          (item) => item.productId === product.id
+          (item) => item.productId === product.productId
         );
 
         if (existingProduct) {
@@ -123,27 +166,33 @@ const CartProvider = ({ children }) => {
               : item
           );
 
-          axios.put(`http://localhost:3000/products/${product.id}`, {
-            userId,
-            productId: product.id,
-            quantity: existingProduct.quantity + 1,
-          });
+          axios.put(
+            `http://localhost:3000/products`,
+            {
+              productId: product.id,
+              quantity: existingProduct.quantity + 1,
+            },
+            { withCredentials: true }
+          );
 
           return updatedCart;
         } else {
           const newProduct = { ...product, quantity: 1 };
 
-          axios.post("http://localhost:3000/products", {
-            title: product.title,
-            price: product.price,
-            quantity: 1,
-            description: product.description,
-            category: product.category,
-            image: product.image,
-            rating: product.rating,
-            userId,
-            productId: product.id,
-          });
+          axios.post(
+            "http://localhost:3000/products/addToCart",
+            {
+              title: product.title,
+              price: product.price,
+              quantity: 1,
+              description: product.description,
+              category: product.category,
+              image: product.image,
+              rating: product.rating,
+              productId: product.id,
+            },
+            { withCredentials: true }
+          );
 
           return [...prevCart, newProduct];
         }
@@ -227,13 +276,14 @@ const CartProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const newCart = [...cart];
+    const newCart = [...userCart];
+
     const total = newCart.reduce(
-      (sum, product) => sum + product.price * product.quantity,
+      (sum, product) => sum + product.product.price * product.quantity,
       0
     );
     setTotalPrice(total);
-  }, [cart]);
+  }, [userCart]);
 
   const value = {
     showCart,
@@ -248,6 +298,7 @@ const CartProvider = ({ children }) => {
     handleSignIn,
     handleSignUp,
     handleChange,
+    userCart,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

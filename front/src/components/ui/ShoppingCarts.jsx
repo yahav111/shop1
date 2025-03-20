@@ -8,7 +8,7 @@ const ShoppingCarts = () => {
   const {
     showCart,
     setShowCart,
-    cart,
+    userCart,
     DeleteCart,
     clickPlus,
     clickMinus,
@@ -78,7 +78,7 @@ const ShoppingCarts = () => {
                         </button>
                       </div>
                     </div>
-                    {cart.map((product, index) => (
+                    {userCart.map((product, index) => (
                       <div key={index} className="mt-8">
                         <div className="flow-root">
                           <ul
@@ -159,6 +159,7 @@ const ShoppingCarts = () => {
                     <div className="mt-6">
                       <Link to="/payment">
                         <button
+                          onClick={() => setShowCart((prev) => !prev)}
                           href="#"
                           className="flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-6 py-3 text-base font-medium text-white shadow-xs hover:bg-indigo-700"
                         >
