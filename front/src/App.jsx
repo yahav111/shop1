@@ -11,6 +11,8 @@ import Signin from "./components/ui/Signin";
 import ForgotPassword from "./components/ui/ForgotPassword";
 import ResetPassword from "./components/ui/ResetPassword";
 import AuthProvider from "./components/contexts/AuthContext";
+import Success from "./components/pages/public/Success";
+import Cancel from "./components/pages/public/Cancel";
 
 // Hoisting
 
@@ -19,6 +21,7 @@ function Root() {
   return (
     <>
       <Nav />
+
       <ShoppingCarts />
       <Outlet />
     </>
@@ -41,6 +44,8 @@ function App() {
               <Route path="signin" element={<Signin />} />
               <Route path="Password/forgot" element={<ForgotPassword />} />
               <Route path="Password/reset" element={<ResetPassword />} />
+              <Route path="success" element={<Success />} />
+              <Route path="cancel" element={<Cancel />} />
             </Route>
           </Routes>
         </AuthProvider>
