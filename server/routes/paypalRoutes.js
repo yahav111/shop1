@@ -1,5 +1,9 @@
 import express from "express";
-import { generateAccessToken } from "../controllers/paypalControllers.js";
+import {
+  generateAccessToken,
+  createOrder,
+  capturePayment,
+} from "../controllers/paypalControllers.js";
 
 const router = express.Router();
 
@@ -11,5 +15,8 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+router.post("/", createOrder);
+router.post("/:orderId", capturePayment);
 
 export default router;
