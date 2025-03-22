@@ -20,6 +20,9 @@ function Product({ product }) {
             <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">
               {product.description}
             </p>
+            <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">
+              {`$${product.price}`}
+            </p>
           </div>
         </div>
       </Link>

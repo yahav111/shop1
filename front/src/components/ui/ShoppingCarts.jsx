@@ -88,7 +88,11 @@ const ShoppingCarts = () => {
                             <li className="flex py-6">
                               <div className="size-24 shrink-0 overflow-hidden rounded-md border border-gray-200">
                                 <img
-                                  src={product.product.image}
+                                  src={
+                                    product.product?.image
+                                      ? product.product.image
+                                      : product.image
+                                  }
                                   alt="Salmon orange fabric pouch with match zipper, gray zipper pull, and adjustable hip belt."
                                   className="size-full object-cover"
                                 />
@@ -97,10 +101,17 @@ const ShoppingCarts = () => {
                                 <div>
                                   <div className="flex justify-between text-base font-medium text-gray-900">
                                     <h3>
-                                      <p href="#">{product.product.title}</p>
+                                      <p href="#">
+                                        src=
+                                        {product.product?.title
+                                          ? product.product.title
+                                          : product.title}
+                                      </p>
                                     </h3>
                                     <p className="ml-4">
-                                      ${product.product.price}
+                                      {product.product?.price
+                                        ? product.product.price
+                                        : product.price}
                                     </p>
                                   </div>
                                   <p className="mt-1 text-sm text-gray-500">
