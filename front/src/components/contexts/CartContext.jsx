@@ -126,27 +126,24 @@ const CartProvider = ({ children }) => {
   // useEffect(() => {
   //   console.log(cart);
   // }, [cart]);
-
-  const DeleteCart = async (product) => {
+  const DeleteCart = async (productId) => {
     try {
-      const userId = localStorage.getItem("userId");
+      const productIdString = String(productId); // Ensure it's a string
+      console.log(productIdString, "yahavvvv");
 
-      console.log(product.productId, "Product ID");
-      console.log(userId, "User ID");
+      setuserCart((prevCart) =>
+        prevCart.filter((item) => String(item.productId) !== productIdString)
+      );
 
       await axios.delete("http://localhost:3000/products", {
-        headers: { "Content-Type": "application/json" },
-        data: { userId, productId: product.productId },
+        data: { productId: productIdString }, // Ensure it's a string
+        withCredentials: true,
       });
-
-      const updatedCart = cart.filter(
-        (item) => item.productId !== product.productId
-      );
-      setCart(updatedCart);
-
-      console.log("Product deleted successfully");
     } catch (error) {
-      console.error("Failed to delete product", error);
+      console.error(
+        "Failed to remove product from cart",
+        error.response?.data || error.message
+      );
     }
   };
 
@@ -154,48 +151,35 @@ const CartProvider = ({ children }) => {
     try {
       console.log(product, "product");
 
-      setCart((prevCart) => {
+      setuserCart((prevCart) => {
         const existingProduct = prevCart.find(
           (item) => item.productId === product.productId
         );
 
-        if (existingProduct) {
-          const updatedCart = prevCart.map((item) =>
-            item.productId === product.id
-              ? { ...item, quantity: item.quantity + 1 }
-              : item
-          );
+        const updatedCart = existingProduct
+          ? prevCart.map((item) =>
+              item.productId === product.productId
+                ? { ...item, quantity: item.quantity + 1 }
+                : item
+            )
+          : [...prevCart, { ...product, quantity: 1 }];
 
-          axios.put(
-            `http://localhost:3000/products`,
-            {
-              productId: product.id,
-              quantity: existingProduct.quantity + 1,
-            },
-            { withCredentials: true }
-          );
+        // Make the POST request for adding the product to the cart
+        axios.post(
+          "http://localhost:3000/products/addToCart",
+          {
+            title: product.title,
+            price: product.price,
+            description: product.description,
+            category: product.category,
+            image: product.image,
+            rating: product.rating,
+            productId: product.productId,
+          },
+          { withCredentials: true }
+        );
 
-          return updatedCart;
-        } else {
-          const newProduct = { ...product, quantity: 1 };
-
-          axios.post(
-            "http://localhost:3000/products/addToCart",
-            {
-              title: product.title,
-              price: product.price,
-              quantity: 1,
-              description: product.description,
-              category: product.category,
-              image: product.image,
-              rating: product.rating,
-              productId: product.id,
-            },
-            { withCredentials: true }
-          );
-
-          return [...prevCart, newProduct];
-        }
+        return updatedCart;
       });
     } catch (error) {
       console.error(
@@ -205,74 +189,54 @@ const CartProvider = ({ children }) => {
     }
   };
 
-  const clickPlus = async (product) => {
-    try {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        alert("Please sign in first!");
-        return;
-      }
+  // clickPlus function to increase the quantity
+  const clickPlus = (productId) => {
+    setuserCart((prevCart) => {
+      const updatedCart = prevCart.map((item) =>
+        item.productId === productId
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      );
 
-      setCart((prevCart) => {
-        const updatedCart = prevCart.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
+      axios.put(
+        "http://localhost:3000/products",
+        {
+          productId,
+          quantity: updatedCart.find((item) => item.productId === productId)
+            .quantity,
+        },
+        { withCredentials: true }
+      );
 
-        const updatedProduct = updatedCart.find(
-          (item) => item.id === product.id
-        );
-        console.log(product.productId, "ydydsu");
-
-        axios.put(`http://localhost:3000/products/${product.productId}`, {
-          userId: userId,
-          productId: product.productId,
-          quantity: updatedProduct.quantity, // Updated quantity
-        });
-
-        return updatedCart;
-      });
-    } catch (error) {
-      console.error("Failed to update product quantity", error);
-    }
+      return updatedCart;
+    });
   };
 
-  const clickMinus = async (product) => {
-    try {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        alert("Please sign in first!");
-        return;
-      }
+  const clickMinus = (productId) => {
+    setuserCart((prevCart) => {
+      const updatedCart = prevCart.map((item) =>
+        item.productId === productId && item.quantity > 1 // Make sure quantity doesn't go below 1
+          ? { ...item, quantity: item.quantity - 1 }
+          : item
+      );
 
-      setCart((prevCart) => {
-        const updatedCart = prevCart.map((item) =>
-          item.id === product.id && item.quantity > 1
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
-        );
+      axios.put(
+        "http://localhost:3000/products",
+        {
+          productId,
+          quantity: updatedCart.find((item) => item.productId === productId)
+            .quantity,
+        },
+        { withCredentials: true }
+      );
 
-        const updatedProduct = updatedCart.find(
-          (item) => item.id === product.id
-        );
-
-        axios.put(`http://localhost:3000/products/${product.productId}`, {
-          userId: userId,
-          productId: product.productId,
-          quantity: updatedProduct?.quantity || 1, // Ensure it doesn't go below 1
-        });
-
-        return updatedCart;
-      });
-    } catch (error) {
-      console.error("Failed to update product quantity", error);
-    }
+      return updatedCart;
+    });
   };
 
   const ClearCart = async () => {
-    await axios.delete("http://localhost:3000/products");
-    setCart([]);
+    await axios.delete("http://localhost:3000/products/clear");
+    setuserCart([]);
   };
 
   useEffect(() => {

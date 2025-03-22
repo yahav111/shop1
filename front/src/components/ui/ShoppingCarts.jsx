@@ -110,7 +110,7 @@ const ShoppingCarts = () => {
                                 <div className="plusButton">
                                   <button
                                     onClick={() => {
-                                      clickPlus(product);
+                                      clickPlus(product.product.productId);
                                     }}
                                   >
                                     <FaPlus />
@@ -123,7 +123,7 @@ const ShoppingCarts = () => {
                                   <div className="flex">
                                     <button
                                       onClick={() => {
-                                        DeleteCart(product);
+                                        DeleteCart(product.product.productId);
                                       }}
                                       type="button"
                                       className="font-medium text-indigo-600 hover:text-indigo-500"
@@ -135,7 +135,7 @@ const ShoppingCarts = () => {
                                 <div className="minusButton">
                                   <button
                                     onClick={() => {
-                                      clickMinus(product);
+                                      clickMinus(product.product.productId);
                                     }}
                                   >
                                     <FaMinus />
