@@ -85,8 +85,8 @@ export const createUserProduct = async (req, res) => {
     const userId = req.cookies.authToken;
     const userIdVerify = jwt.verify(userId, JWT_SECRET);
     const userIdVerify2 = userIdVerify.userId;
-    console.log(userId, "userId");
-    console.log(userIdVerify, "userIdVerify");
+    // console.log(userId, "userId");
+    // console.log(userIdVerify, "userIdVerify");
     console.log(userIdVerify2, "gghehdtd");
 
     if (!title || !price || !productId) {
@@ -171,19 +171,19 @@ export const createUserProduct = async (req, res) => {
 
 export const updateUserProduct = async (req, res) => {
   try {
-    const { productId, title, price, description, category, image, rating } =
-      req.body;
+    const { productId, quantity } = req.body; // Get the productId and quantity from the request body
 
-    // Verify user authentication
-    const userId = req.cookies.authToken;
-    const userIdVerify = jwt.verify(userId, JWT_SECRET);
+    if (!productId || !quantity) {
+      return res.status(400).json({
+        error: "ProductId and quantity are required",
+      });
+    }
+
+    const userId = req.cookies.authToken; // Get the user ID from the cookie
+    const userIdVerify = jwt.verify(userId, JWT_SECRET); // Verify the user ID using JWT
     const userIdVerify2 = userIdVerify.userId;
 
-    console.log(userId, "userId");
-    console.log(userIdVerify, "userIdVerify");
-    console.log(userIdVerify2, "userIdVerify2");
-
-    // Check if user exists
+    // Check if the user exists
     const existingUser = await prisma.user.findUnique({
       where: { id: userIdVerify2 },
     });
@@ -192,36 +192,46 @@ export const updateUserProduct = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Check if product exists
-    const existingProduct = await prisma.product.findUnique({
-      where: { productId },
-    });
-
-    if (!existingProduct) {
-      return res.status(404).json({ error: "Product not found" });
-    }
-
-    // Update product details
-    const updatedProduct = await prisma.product.update({
-      where: { productId },
-      data: {
-        title: title || existingProduct.title,
-        price: price || existingProduct.price,
-        description: description || existingProduct.description,
-        category: category || existingProduct.category,
-        image: image || existingProduct.image,
-        rating: rating || existingProduct.rating,
+    // Check if the product exists in the user's cart
+    let userProduct = await prisma.userProducts.findUnique({
+      where: {
+        productId_userId: {
+          productId,
+          userId: existingUser.id,
+        },
       },
     });
 
-    res.status(200).json({
-      product: updatedProduct,
-      message: "Product updated successfully",
+    // If the user does not have the product in their cart, add it with the given quantity
+    if (!userProduct) {
+      userProduct = await prisma.userProducts.create({
+        data: {
+          userId: existingUser.id,
+          productId,
+          quantity, // Set the quantity as provided in the request
+        },
+      });
+    } else {
+      // If the product is already in the cart, set the quantity directly to the provided value
+      userProduct = await prisma.userProducts.update({
+        where: {
+          id: userProduct.id,
+        },
+        data: {
+          quantity, // Directly set the new quantity (no addition)
+        },
+      });
+    }
+
+    // Respond with the updated or created product
+    res.status(201).json({
+      product: { quantity: userProduct.quantity },
+      message: "Product quantity updated successfully",
     });
   } catch (error) {
-    console.error("Error updating product:", error);
+    console.error("Error updating product quantity:", error);
     res.status(500).json({
-      error: "Failed to update product",
+      error: "Failed to update product quantity",
       details: error.message,
     });
   }
@@ -269,33 +279,49 @@ export const updateUserProduct = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
   try {
-    const { userId, productId } = req.body;
+    const { productId } = req.body;
+    const userId = req.cookies.authToken;
+    const userIdVerify = jwt.verify(userId, JWT_SECRET);
+    const userIdVerify2 = userIdVerify.userId;
+    console.log(userIdVerify2, "delete");
+    console.log(productId, "productt");
 
-    if (!userId || !productId) {
-      return res
-        .status(400)
-        .json({ error: "userId and productId are required" });
+    if (!productId) {
+      return res.status(400).json({ error: "ProductId is required" });
     }
 
-    // בדוק אם המוצר קיים אצל המשתמש
-    const existingUserProduct = await prisma.userProducts.findUnique({
+    // Check if the user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userIdVerify2 },
+    });
+
+    if (!existingUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Check if the product exists in the user's cart
+    const userProduct = await prisma.userProducts.findUnique({
       where: {
-        productId_userId: { productId, userId },
+        productId_userId: {
+          productId,
+          userId: existingUser.id,
+        },
       },
     });
 
-    if (!existingUserProduct) {
-      return res.status(404).json({ error: "Product not found for this user" });
+    if (!userProduct) {
+      return res.status(404).json({ error: "Product not found in user cart" });
     }
 
-    // מחק את המוצר מהטבלה של userProducts
+    // Delete the product from the user's cart
     await prisma.userProducts.delete({
-      where: {
-        productId_userId: { productId, userId },
-      },
+      where: { id: userProduct.id },
     });
 
-    res.status(200).json({ message: "Product deleted successfully" });
+    return res.status(200).json({
+      message: "Product removed from cart successfully",
+      productId,
+    });
   } catch (error) {
     console.error("Error deleting product:", error);
     res.status(500).json({

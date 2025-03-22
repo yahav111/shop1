@@ -21,7 +21,7 @@ router.post("/addToCart", createUserProduct);
 
 router.put("/", updateUserProduct);
 router.delete("/", deleteProduct);
-router.delete("/", clearCart);
+router.delete("/clear", clearCart);
 
 export default router;
 
