@@ -17,14 +17,13 @@ function Nav() {
         });
         console.log(response.data, "fgfb");
 
-        if (response.data.tokenExists && !response.data.tokenExpired) {
-          navigate("/store"); // If token exists and is not expired
+        if (response.data.tokenExists) {
+          navigate("/store");
         } else {
-          navigate("/"); // If token is expired or doesn't exist
+          navigate("/");
         }
       } catch (error) {
-        console.log("Error verifying token:", error);
-        navigate("/"); // Navigate to login if there is an error (e.g., token expired or invalid)
+        navigate("/");
       }
     };
 

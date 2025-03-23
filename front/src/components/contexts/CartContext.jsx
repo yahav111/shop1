@@ -243,9 +243,11 @@ const CartProvider = ({ children }) => {
     const newCart = [...userCart];
 
     const total = newCart.reduce(
-      (sum, product) => sum + product.product.price * product.quantity,
+      (sum, product) =>
+        sum + (product.product?.price || product.price) * product.quantity,
       0
     );
+
     setTotalPrice(total);
   }, [userCart]);
 
