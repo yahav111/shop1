@@ -91,3 +91,42 @@ export const logout = (req, res) => {
   });
   res.json({ message: "Logged out successfully" });
 };
+
+export const updateUser = async (req, res) => {
+  const { name, email, password } = req.body;
+  console.log(name, "name");
+  console.log(email, "email");
+  console.log(password, "password");
+
+  const token = req.cookies.authToken;
+
+  if (!token) {
+    return res.status(401).json({ error: "Unauthorized - No token provided" });
+  }
+
+  try {
+    // Verify and decode the token
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.userId;
+
+    // Hash the password only if it's provided
+    const hashedPassword = password
+      ? await bcrypt.hash(password, 10)
+      : undefined;
+
+    // Update user data (only provided fields)
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name: name || undefined,
+        email: email || undefined,
+        password: hashedPassword || undefined,
+      },
+    });
+
+    res.json({ message: "User updated successfully", user: updatedUser });
+  } catch (error) {
+    console.error("Update User Error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

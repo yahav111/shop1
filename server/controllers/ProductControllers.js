@@ -6,12 +6,29 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
 export const getAllProducts = async (req, res) => {
   try {
-    const userId = req.cookies.authToken;
-    console.log(userId, "userid");
+    // const userId = req.cookies.authToken;
+    // console.log(userId, "userid");
     const products = await prisma.product.findMany();
     res.json(products);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch products" });
+  }
+};
+
+export const getProductById = async (req, res) => {
+  try {
+    const { id } = req.params; // Get productId from the route parameters
+    const product = await prisma.product.findUnique({
+      where: { id }, // Search for the product by productId
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch product" });
   }
 };
 

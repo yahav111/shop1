@@ -7,12 +7,14 @@ import {
   deleteProduct,
   createProduct,
   clearCart,
+  getProductById,
 } from "../controllers/ProductControllers.js";
 
 const router = express.Router();
 
 router.get("/", getAllProducts);
 router.get("/userId", getUserCart);
+router.get("/productId/:id", getProductById);
 // create Only Product - Model Product (לא עגלת קניות)
 
 router.post("/", createProduct);
