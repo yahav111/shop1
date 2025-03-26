@@ -2,6 +2,7 @@ import React, { useState, useContext } from "react";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../contexts/CartContext";
+import axios from "axios";
 
 const Paypal = () => {
   const { totalPrice } = useContext(CartContext);
@@ -32,20 +33,27 @@ const Paypal = () => {
 
   const captureOrder = async (orderId) => {
     try {
-      const response = await fetch(
+      // Capture the order from PayPal
+      const response = await axios.post(
         `${import.meta.env.VITE_SERVER_URL}/paypal/${orderId}`,
+        { orderId },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      console.log("Order Captured:", response.data);
+
+      // Send a POST request to /order with credentials
+      const orderResponse = await axios.post(
+        "http://localhost:3000/order",
+        {},
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId }),
+          withCredentials: true,
         }
       );
 
-      if (!response.ok) throw new Error("Failed to capture order");
+      console.log("Order Response:", orderResponse.data);
 
-      const data = await response.json();
-      console.log("Order Captured:", data);
-      navigate("/success"); // Redirect to success page after capture
+      navigate("/success"); // Redirect to success page after saving the order
     } catch (error) {
       console.error("Error capturing order:", error);
     }

@@ -9,13 +9,13 @@ function OneProduct() {
   const getProductDetails = async () => {
     try {
       const { data } = await axios.get(
-        `http://localhost:3000/products/${productId}`
+        `http://localhost:3000/products/productId/${productId}`
       );
-      console.log(data);
+      console.log(data, "oneProduct");
 
       setProduct(data);
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching product:", error);
     }
   };
 

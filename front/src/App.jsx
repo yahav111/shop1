@@ -13,6 +13,8 @@ import ResetPassword from "./components/ui/ResetPassword";
 import AuthProvider from "./components/contexts/AuthContext";
 import Success from "./components/pages/public/Success";
 import Cancel from "./components/pages/public/Cancel";
+import UpdateUser from "./components/pages/public/UpdateUser";
+import Orders from "./components/pages/public/Orders";
 
 // Hoisting
 
@@ -38,7 +40,7 @@ function App() {
               <Route index element={<Login />} />
               <Route path="about" element={<About />} />
               <Route path="store" element={<Store />} />
-              <Route path="product/:id" element={<OneProduct />} />
+              <Route path="product/:productId" element={<OneProduct />} />
               <Route path="payment" element={<Payment />} />
               <Route path="home" element={<Home />} />
               <Route path="signin" element={<Signin />} />
@@ -46,6 +48,8 @@ function App() {
               <Route path="Password/reset" element={<ResetPassword />} />
               <Route path="success" element={<Success />} />
               <Route path="cancel" element={<Cancel />} />
+              <Route path="UpdateUser" element={<UpdateUser />} />
+              <Route path="Orders" element={<Orders />} />
             </Route>
           </Routes>
         </AuthProvider>

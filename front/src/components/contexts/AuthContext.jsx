@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect } from "react";
-
 import axios from "axios";
 
 export const AuthContext = createContext();
@@ -32,6 +31,8 @@ const AuthProvider = ({ children }) => {
       setMessage(error.response?.data?.error || "Something went wrong!");
     }
   };
+
+  
 
   return (
     <AuthContext.Provider value={{ forgotPassword, resetPassword, message }}>

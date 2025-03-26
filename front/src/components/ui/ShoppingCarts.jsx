@@ -93,7 +93,9 @@ const ShoppingCarts = () => {
                                       ? product.product.image
                                       : product.image
                                   }
-                                  alt="Salmon orange fabric pouch with match zipper, gray zipper pull, and adjustable hip belt."
+                                  alt="Salmon orange fabric pouch with match
+                                zipper, gray zipper pull, and adjustable hip
+                                belt."
                                   className="size-full object-cover"
                                 />
                               </div>
@@ -102,7 +104,6 @@ const ShoppingCarts = () => {
                                   <div className="flex justify-between text-base font-medium text-gray-900">
                                     <h3>
                                       <p href="#">
-                                        src=
                                         {product.product?.title
                                           ? product.product.title
                                           : product.title}
@@ -121,7 +122,11 @@ const ShoppingCarts = () => {
                                 <div className="plusButton">
                                   <button
                                     onClick={() => {
-                                      clickPlus(product.product.productId);
+                                      clickPlus(
+                                        product.product?.productId
+                                          ? product.product.productId
+                                          : product.productId
+                                      );
                                     }}
                                   >
                                     <FaPlus />
@@ -134,7 +139,11 @@ const ShoppingCarts = () => {
                                   <div className="flex">
                                     <button
                                       onClick={() => {
-                                        DeleteCart(product.product.productId);
+                                        DeleteCart(
+                                          product.product?.productId
+                                            ? product.product.productId
+                                            : product.productId
+                                        );
                                       }}
                                       type="button"
                                       className="font-medium text-indigo-600 hover:text-indigo-500"
@@ -146,7 +155,11 @@ const ShoppingCarts = () => {
                                 <div className="minusButton">
                                   <button
                                     onClick={() => {
-                                      clickMinus(product.product.productId);
+                                      clickMinus(
+                                        product.product?.productId
+                                          ? product.product.productId
+                                          : product.productId
+                                      );
                                     }}
                                   >
                                     <FaMinus />

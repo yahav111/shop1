@@ -3,11 +3,12 @@ import { Link } from "react-router";
 import { CartContext } from "../contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FiLogOut } from "react-icons/fi";
+import Dropdown from "../ui/Dropdown";
 
 function Nav() {
+  const [hasCookie, setHasCookie] = useState(false);
   const navigate = useNavigate();
-  const { setShowCart } = useContext(CartContext);
+  const { setShowCart, handleLogout } = useContext(CartContext);
 
   useEffect(() => {
     const verifyToken = async () => {
@@ -15,15 +16,19 @@ function Nav() {
         const response = await axios.get("http://localhost:3000/auth/me", {
           withCredentials: true,
         });
+
         console.log(response.data, "fgfb");
 
         if (response.data.tokenExists) {
+          setHasCookie(true);
           navigate("/store");
         } else {
+          setHasCookie(false);
           navigate("/");
         }
       } catch (error) {
-        navigate("/");
+        setHasCookie(false);
+        console.log(error);
       }
     };
 
@@ -34,26 +39,22 @@ function Nav() {
     <>
       <nav className="bg-white dark:bg-gray-900 w-full border-b border-gray-200 dark:border-gray-600">
         <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-          <a
-            href="https://flowbite.com/"
-            className="flex items-center space-x-3 rtl:space-x-reverse"
-          >
-            <img
-              src="https://flowbite.com/docs/images/logo.svg"
-              className="h-8"
-              alt="Flowbite Logo"
-            />
-            <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
-              Flowbite
-            </span>
-          </a>
+          {hasCookie && (
+            <a>
+              <button></button>
+
+              {/* <img
+             src="https://flowbite.com/docs/images/logo.svg"
+             className="h-8"
+             alt="Flowbite Logo"
+           /> */}
+            </a>
+          )}
+
           <div className="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
-            <button
-              type="button"
-              className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-xs px-3 py-1.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transform -translate-x-7"
-            >
+            <button type="button" style={{ marginRight: "30px" }}>
               <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">
-                <FiLogOut />
+                <Dropdown />
               </span>
             </button>
 

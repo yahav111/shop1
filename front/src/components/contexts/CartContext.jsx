@@ -11,6 +11,8 @@ const CartProvider = ({ children }) => {
   const [totalPrice, setTotalPrice] = useState(0);
   const [user, setUser] = useState({ name: "", email: "", password: "" });
   const [userCart, setuserCart] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [totalPriceOrder, setTotalPriceOrde] = useState(0);
 
   const handleChange = (e) => {
     setUser({
@@ -19,7 +21,7 @@ const CartProvider = ({ children }) => {
     });
   };
 
-  const handleSignUp = async (e) => {
+  const handleSignUp = async (e, navigate) => {
     e.preventDefault();
 
     try {
@@ -35,23 +37,22 @@ const CartProvider = ({ children }) => {
     }
   };
 
-  // const generateAccessToken = async () => {
-  //   try {
-  //     const { data } = await axios.post(
-  //       "https://api-m.sandbox.paypal.com/v1/oauth2/token",
-  //       "grant_type=client_credentials",
-  //       {
-  //         auth: {
-  //           username: process.env.PAYPAL_CLIENT_ID,
-  //           password: process.env.PAYPAL_SECRET,
-  //         },
-  //       }
-  //     );
-  //     return data.access_token;
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // };
+  const handleLogout = async () => {
+    try {
+      const response = await axios.post(
+        "/auth",
+        {}, // No body needed
+        { withCredentials: true } // Important for cookies
+      );
+
+      console.log(response.data.message, "yahav"); // "Logged out successfully"
+
+      // Redirect user or update state
+      window.location.href = "/"; // Example redirect
+    } catch (error) {
+      console.error("Logout failed:", error.response?.data || error.message);
+    }
+  };
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -74,6 +75,27 @@ const CartProvider = ({ children }) => {
       }
     } catch (err) {
       console.error("Sign-in failed", err);
+    }
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.put(
+        "/auth",
+        {
+          name: user.name,
+          email: user.email,
+          password: user.password,
+        },
+        { withCredentials: true }
+      );
+
+      console.log(response.data);
+      alert("User updated successfully!");
+    } catch (error) {
+      console.error("Update failed", error);
+      alert("Failed to update user.");
     }
   };
 
@@ -121,6 +143,25 @@ const CartProvider = ({ children }) => {
     // Fetch products from both sources
     fetchUserProducts();
     fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/order", {
+          withCredentials: true, // Ensures cookies are sent
+        });
+        console.log(response.data.orders, "responseOrder");
+
+        if (response.data.orders) {
+          setOrders(response.data.orders);
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+      }
+    };
+
+    fetchOrders();
   }, []);
 
   // useEffect(() => {
@@ -189,7 +230,6 @@ const CartProvider = ({ children }) => {
     }
   };
 
-  // clickPlus function to increase the quantity
   const clickPlus = (productId) => {
     setuserCart((prevCart) => {
       const updatedCart = prevCart.map((item) =>
@@ -251,6 +291,30 @@ const CartProvider = ({ children }) => {
     setTotalPrice(total);
   }, [userCart]);
 
+  // useEffect(() => {
+  //   const neworders = [...orders];
+  //   if (neworders.length > 0) {
+  //     console.log(neworders[0].orderItems[0].product.price, "orderItems");
+  //     console.log(neworders[0].orderItems[0].quantity);
+  //   } else {
+  //     console.log("No orders found");
+  //   }
+  // }, [orders]);
+
+  useEffect(() => {
+    const newOrders = [...orders];
+
+    const totalPricePerOrder = newOrders.map((order, index) =>
+      order.orderItems.reduce(
+        (sum, item) => sum + (item.product.price || 0) * item.quantity,
+        0
+      )
+    );
+    console.log(totalPricePerOrder);
+
+    setTotalPriceOrde(totalPricePerOrder); // Array of total prices for each order
+  }, [orders]);
+
   const value = {
     showCart,
     setShowCart,
@@ -265,6 +329,10 @@ const CartProvider = ({ children }) => {
     handleSignUp,
     handleChange,
     userCart,
+    handleLogout,
+    handleUpdateUser,
+    orders,
+    totalPriceOrder,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
