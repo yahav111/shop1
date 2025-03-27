@@ -52,6 +52,7 @@ export const signIn = async (req, res) => {
       return res.status(401).json({ error: "Invalid password" });
     }
 
+    // Payload , Secret , Options
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
       expiresIn: "1h",
     });

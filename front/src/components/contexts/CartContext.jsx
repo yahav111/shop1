@@ -13,6 +13,7 @@ const CartProvider = ({ children }) => {
   const [userCart, setuserCart] = useState([]);
   const [orders, setOrders] = useState([]);
   const [totalPriceOrder, setTotalPriceOrde] = useState(0);
+  const [isAuth, setIsAuth] = useState(false);
 
   const handleChange = (e) => {
     setUser({
@@ -69,12 +70,11 @@ const CartProvider = ({ children }) => {
 
       if (response.data.message) {
         alert("Sign-in successful!");
-        window.location.href = "http://localhost:5173/store";
-      } else {
-        alert("Sign-in failed: Token does not exist.");
+        setIsAuth(true)
       }
     } catch (err) {
       console.error("Sign-in failed", err);
+      setIsAuth(false)
     }
   };
 
@@ -98,6 +98,27 @@ const CartProvider = ({ children }) => {
       alert("Failed to update user.");
     }
   };
+
+  useEffect(() => {
+    const verifyToken = async () => {
+      try {
+        const response = await axios.get("/auth/me", {
+          withCredentials: true,
+        });
+
+        console.log(response.data, "fgfb");
+
+        if (response.data.tokenExists) {
+          setIsAuth(true)
+        } 
+      } catch (error) {
+        console.log(error);
+        setIsAuth(false)
+      }
+    };
+
+    verifyToken();
+  }, []);
 
   useEffect(() => {
     const fetchUserProducts = async () => {
@@ -333,6 +354,7 @@ const CartProvider = ({ children }) => {
     handleUpdateUser,
     orders,
     totalPriceOrder,
+    isAuth
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

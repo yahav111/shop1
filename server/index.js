@@ -10,16 +10,13 @@ import paypalRoutes from "./routes/paypalRoutes.js";
 const app = express();
 const PORT = 3000;
 
-app.use(cors({ credentials: true, origin: ["http://localhost:5173"] }));
+app.use(cors({ credentials: true, origin: ["http://localhost:5173","http://localhost:5175"] }));
 app.use(express.json());
 app.use(cookieParser());
 
 app.use("/auth", userRoutes);
-
 app.use("/products", productRoutes);
-
 app.use("/Password", PasswordRoutes);
-
 app.use("/order", orderRoutes);
 app.use("/paypal", paypalRoutes);
 

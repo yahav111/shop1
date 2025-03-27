@@ -32,10 +32,11 @@ const AuthProvider = ({ children }) => {
     }
   };
 
-  
 
   return (
-    <AuthContext.Provider value={{ forgotPassword, resetPassword, message }}>
+    <AuthContext.Provider
+      value={{ forgotPassword, resetPassword, message }}
+    >
       {children}
     </AuthContext.Provider>
   );

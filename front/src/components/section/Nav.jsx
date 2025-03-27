@@ -10,31 +10,6 @@ function Nav() {
   const navigate = useNavigate();
   const { setShowCart, handleLogout } = useContext(CartContext);
 
-  useEffect(() => {
-    const verifyToken = async () => {
-      try {
-        const response = await axios.get("http://localhost:3000/auth/me", {
-          withCredentials: true,
-        });
-
-        console.log(response.data, "fgfb");
-
-        if (response.data.tokenExists) {
-          setHasCookie(true);
-          navigate("/store");
-        } else {
-          setHasCookie(false);
-          navigate("/");
-        }
-      } catch (error) {
-        setHasCookie(false);
-        console.log(error);
-      }
-    };
-
-    verifyToken();
-  }, []);
-
   return (
     <>
       <nav className="bg-white dark:bg-gray-900 w-full border-b border-gray-200 dark:border-gray-600">
