@@ -1,29 +1,32 @@
 import express from "express";
+import Protect from "../middleware/protect.js";
 import {
   getAllProducts,
   getUserCart,
   createUserProduct,
   updateUserProduct,
-  deleteProduct,
   createProduct,
   clearCart,
   getProductById,
+  deleteProductuser,
+  deleteProductById,
 } from "../controllers/ProductControllers.js";
 
 const router = express.Router();
 
 router.get("/", getAllProducts);
-router.get("/userId", getUserCart);
-router.get("/productId/:id", getProductById);
+router.get("/userId", Protect, getUserCart);
+router.get("/productId/:productId", getProductById);
 // create Only Product - Model Product (לא עגלת קניות)
 
 router.post("/", createProduct);
 // create UserProducts when user add Product to the cart - Model UserProducts
-router.post("/addToCart", createUserProduct);
+router.post("/addToCart", Protect, createUserProduct);
 
-router.put("/", updateUserProduct);
-router.delete("/", deleteProduct);
+router.put("/", Protect, updateUserProduct);
+router.delete("/", Protect, deleteProductuser);
 router.delete("/clear", clearCart);
+router.delete("/:productId", deleteProductById);
 
 export default router;
 

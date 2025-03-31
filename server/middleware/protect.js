@@ -1,16 +1,30 @@
-import { verify } from "jsonwebtoken";
+import pkg from "jsonwebtoken";
+const { verify } = pkg;
+const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
-
-
-async function Protect(req,res,next){
-try {
+const Protect = (req, res, next) => {
+  try {
     const token = req.cookies.authToken;
-   const decode = verify(token,process.env.JWT_SECRET);
+    console.log(token, "tokenProtect");
 
-   if(!decode) throw new Error("token not valid!")
+    if (!token) {
+      return res
+        .status(401)
+        .json({ message: "No token, authorization denied!" });
+    }
 
-} catch (error) {
-    console.log(error.message);
-    
-}
-}
+    const decoded = verify(token, JWT_SECRET);
+
+    if (!decoded) {
+      return res.status(401).json({ message: "Token is not valid!" });
+    }
+
+    req.user = decoded;
+    next();
+  } catch (error) {
+    console.log("JWT Verification Error:", error.message);
+    return res.status(401).json({ message: "Token verification failed!" });
+  }
+};
+
+export default Protect;

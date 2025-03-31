@@ -1,8 +1,5 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
-import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
 export const getAllProducts = async (req, res) => {
   try {
@@ -17,9 +14,9 @@ export const getAllProducts = async (req, res) => {
 
 export const getProductById = async (req, res) => {
   try {
-    const { id } = req.params; // Get productId from the route parameters
+    const { productId } = req.params; // Get productId from the route parameters
     const product = await prisma.product.findUnique({
-      where: { id }, // Search for the product by productId
+      where: { productId }, // Search for the product by productId
     });
 
     if (!product) {
@@ -32,21 +29,27 @@ export const getProductById = async (req, res) => {
   }
 };
 
+export const deleteProductById = async (req, res) => {
+  try {
+    const { productId } = req.params; // Get product ID from request parameters
+
+    const deletedProduct = await prisma.product.delete({
+      where: { productId }, // Delete the product with the given ID
+    });
+
+    res.json({ message: "Product deleted successfully", deletedProduct });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete product" });
+  }
+};
+
 export const getUserCart = async (req, res) => {
   try {
-    const userId = req.cookies.authToken;
-
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized: No token provided" });
-    }
-
-    // Verify JWT token and extract user ID
-    const decodedToken = jwt.verify(userId, JWT_SECRET);
-    const userIdVerify = decodedToken.userId;
+    const userId = req.user.userId;
 
     // Find the user
     const existingUser = await prisma.user.findUnique({
-      where: { id: userIdVerify },
+      where: { id: userId },
     });
 
     if (!existingUser) {
@@ -55,7 +58,7 @@ export const getUserCart = async (req, res) => {
 
     // Get all products linked to the user
     const userProducts = await prisma.userProducts.findMany({
-      where: { userId: userIdVerify },
+      where: { userId: userId },
       include: { product: true }, // Include product details
     });
 
@@ -99,12 +102,7 @@ export const createUserProduct = async (req, res) => {
     const { title, price, description, category, image, rating, productId } =
       req.body;
 
-    const userId = req.cookies.authToken;
-    const userIdVerify = jwt.verify(userId, JWT_SECRET);
-    const userIdVerify2 = userIdVerify.userId;
-    // console.log(userId, "userId");
-    // console.log(userIdVerify, "userIdVerify");
-    console.log(userIdVerify2, "gghehdtd");
+    const userId = req.user.userId;
 
     if (!title || !price || !productId) {
       return res.status(400).json({
@@ -114,7 +112,7 @@ export const createUserProduct = async (req, res) => {
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
-      where: { id: userIdVerify2 },
+      where: { id: userId },
     });
 
     if (!existingUser) {
@@ -196,13 +194,10 @@ export const updateUserProduct = async (req, res) => {
       });
     }
 
-    const userId = req.cookies.authToken; // Get the user ID from the cookie
-    const userIdVerify = jwt.verify(userId, JWT_SECRET); // Verify the user ID using JWT
-    const userIdVerify2 = userIdVerify.userId;
-
+    const userId = req.user.userId;
     // Check if the user exists
     const existingUser = await prisma.user.findUnique({
-      where: { id: userIdVerify2 },
+      where: { id: userId },
     });
 
     if (!existingUser) {
@@ -294,22 +289,18 @@ export const updateUserProduct = async (req, res) => {
 //   }
 // };
 
-export const deleteProduct = async (req, res) => {
+export const deleteProductuser = async (req, res) => {
   try {
     const { productId } = req.body;
-    const userId = req.cookies.authToken;
-    const userIdVerify = jwt.verify(userId, JWT_SECRET);
-    const userIdVerify2 = userIdVerify.userId;
-    console.log(userIdVerify2, "delete");
-    console.log(productId, "productt");
 
+    const userId = req.user.userId;
     if (!productId) {
       return res.status(400).json({ error: "ProductId is required" });
     }
 
     // Check if the user exists
     const existingUser = await prisma.user.findUnique({
-      where: { id: userIdVerify2 },
+      where: { id: userId },
     });
 
     if (!existingUser) {
