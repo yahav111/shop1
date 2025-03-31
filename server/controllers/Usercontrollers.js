@@ -100,6 +100,7 @@ export const signIn = async (req, res) => {
 
 export const verifyToken = (req, res) => {
   const token = req.cookies.authToken;
+  console.log(token);
 
   if (!token) {
     return res.status(401).json({ error: "No token provided" });
@@ -192,7 +193,7 @@ export const loginAdmin = async (req, res) => {
     });
 
     // Set the token as a cookie (httpOnly for security)
-    res.cookie("authTokenDashboard", token, {
+    res.cookie("authToken", token, {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
