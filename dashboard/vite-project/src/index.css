@@ -1,0 +1,80 @@
+@import "tailwindcss";
+/* Container for the entire table */
+.table-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Input field for search */
+input[type="text"] {
+  padding: 10px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 300px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  outline: none;
+}
+
+input[type="text"]:focus {
+  border-color: #007bff;
+}
+
+/* Styling the table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-family: Arial, sans-serif;
+  text-align: left;
+}
+
+table th,
+table td {
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+}
+
+table th {
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+table tr:hover {
+  background-color: #f1f1f1;
+}
+
+table td button {
+  padding: 5px 10px;
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+table td button:hover {
+  background-color: #e60000;
+}
+
+table td button:focus {
+  outline: none;
+}
+
+/* Add some margin to the table */
+table {
+  margin-top: 20px;
+}
+
+/* Improve row hover effect */
+table tr:hover {
+  background-color: #f1f1f1;
+  cursor: pointer;
+}

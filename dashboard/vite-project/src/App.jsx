@@ -1,36 +1,44 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
 import React from "react";
-import axios from "axios";
-
-function App() {
-  const query = useQuery({
-    queryKey: ["store"],
-    queryFn: async () => await axios.get("https://fakestoreapi.com/products"),
-  });
-
-  console.log(query);
-
-  const { mutate , isError, isPending } = useMutation({
-    mutationKey: ["test"],
-    mutationFn: async (prd) => await axios.post("https://fakestoreapi.com/products",prd),
-    onSuccess: (data) => {},
-    onError: (err) => {},
-  });
-  
-  const product = {
-    id: 0,
-    title: "string",
-    price: 0.1,
-    description: "string",
-    category: "string",
-    image: "http://example.com",
-  };
-
+import { BrowserRouter, Routes, Route, Outlet, Navigate } from "react-router";
+import PoductTable from "./components/pages/private/ProductTable";
+import OrdersTable from "./components/pages/private/OrdersTable";
+import UserTable from "./components/pages/private/UserTable";
+import Nav from "./components/section/Nav";
+import { useContext } from "react";
+import { AuthContext } from "./components/contexts/AuthContext";
+import SignIn from "./components/pages/private/SignIn";
+function Root() {
   return (
-    <div>
-      <button onClick={() => mutate(product)}>ClickMe</button>
-    </div>
+    <>
+      <Nav />
+      <Outlet />
+    </>
   );
 }
+
+const App = () => {
+  const { isAuth } = useContext(AuthContext);
+  return (
+    <>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Root />}>
+            <Route element={isAuth ? <Outlet /> : <Navigate to={"/"} />}>
+              <Route path="/ProductTable" element={<PoductTable />} />
+              <Route path="/OrderTable" element={<OrdersTable />} />
+              <Route path="/UserTable" element={<UserTable />} />
+            </Route>
+
+            <Route
+              element={!isAuth ? <Outlet /> : <Navigate to={"/ProductTable"} />}
+            >
+              <Route index element={<SignIn />} />
+            </Route>
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </>
+  );
+};
 
 export default App;
