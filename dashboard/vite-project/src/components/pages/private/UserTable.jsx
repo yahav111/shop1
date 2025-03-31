@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
@@ -41,15 +41,19 @@ const UserTable = () => {
   });
 
   const [search, setSearch] = useState("");
-  const [userList, setUserList] = useState(users);
+  const [userOrder, setUserOrder] = useState(users);
 
-  useMemo(() => {
-    setUserList(
-      users?.filter((user) =>
+  useEffect(() => {
+    setUserOrder(users);
+  }, [users]);
+
+  const filteredUsers = useMemo(() => {
+    return (
+      userOrder?.filter((user) =>
         user.name.toLowerCase().includes(search.toLowerCase())
       ) || []
     );
-  }, [users, search]);
+  }, [userOrder, search]);
 
   const handleDelete = (userId) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
@@ -59,10 +63,12 @@ const UserTable = () => {
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
-    const reorderedUsers = [...userList];
+
+    const reorderedUsers = [...userOrder];
     const [movedUser] = reorderedUsers.splice(result.source.index, 1);
     reorderedUsers.splice(result.destination.index, 0, movedUser);
-    setUserList(reorderedUsers);
+
+    setUserOrder(reorderedUsers);
   };
 
   const columns = [
@@ -83,7 +89,7 @@ const UserTable = () => {
   ];
 
   const table = useReactTable({
-    data: userList,
+    data: filteredUsers,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -99,8 +105,9 @@ const UserTable = () => {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
+
       <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="users">
+        <Droppable droppableId="userTable">
           {(provided) => (
             <table
               border="1"
