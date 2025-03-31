@@ -6,6 +6,7 @@ import {
   getCoreRowModel,
   flexRender,
 } from "@tanstack/react-table";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 const axiosInstance = axios.create({ withCredentials: true });
 
@@ -37,20 +38,32 @@ const ProductTable = () => {
   });
 
   const [search, setSearch] = useState("");
+  const [orderedProducts, setOrderedProducts] = useState([]);
 
-  // חישוב הנתונים המסוננים עם useMemo כדי למנוע חישובים מיותרים
+  useMemo(() => {
+    if (products) setOrderedProducts(products);
+  }, [products]);
+
   const filteredProducts = useMemo(() => {
     return (
-      products?.filter((product) =>
+      orderedProducts?.filter((product) =>
         product.title.toLowerCase().includes(search.toLowerCase())
       ) || []
     );
-  }, [products, search]);
+  }, [orderedProducts, search]);
 
   const handleDelete = (productId) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       deleteProductMutation.mutate(productId);
     }
+  };
+
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    const newItems = [...orderedProducts];
+    const [movedItem] = newItems.splice(result.source.index, 1);
+    newItems.splice(result.destination.index, 0, movedItem);
+    setOrderedProducts(newItems);
   };
 
   const columns = [
@@ -80,7 +93,7 @@ const ProductTable = () => {
   ];
 
   const table = useReactTable({
-    data: filteredProducts, // מעביר את הנתונים המסוננים לטבלה
+    data: filteredProducts,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -97,33 +110,55 @@ const ProductTable = () => {
         onChange={(e) => setSearch(e.target.value)}
       />
 
-      <table border="1">
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th key={header.id}>
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <table border="1">
+          <thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th key={header.id}>
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <Droppable droppableId="products">
+            {(provided) => (
+              <tbody ref={provided.innerRef} {...provided.droppableProps}>
+                {table.getRowModel().rows.map((row, index) => (
+                  <Draggable
+                    key={row.id}
+                    draggableId={row.id.toString()}
+                    index={index}
+                  >
+                    {(provided) => (
+                      <tr
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <td key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </tbody>
+            )}
+          </Droppable>
+        </table>
+      </DragDropContext>
     </div>
   );
 };

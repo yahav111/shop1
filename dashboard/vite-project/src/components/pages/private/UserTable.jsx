@@ -6,19 +6,17 @@ import {
   getCoreRowModel,
   flexRender,
 } from "@tanstack/react-table";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
-// Axios instance with cookies enabled
 const axiosInstance = axios.create({
-  withCredentials: true, // Ensures cookies (e.g., auth tokens) are included
+  withCredentials: true,
 });
 
-// Fetch users from API
 const fetchUsers = async () => {
   const { data } = await axiosInstance.get("http://localhost:3000/auth");
-  return data || []; // Ensure we always get an array
+  return data || [];
 };
 
-// Delete user from API
 const deleteUser = async (userId) => {
   await axiosInstance.delete(`http://localhost:3000/auth/${userId}`);
 };
@@ -26,7 +24,6 @@ const deleteUser = async (userId) => {
 const UserTable = () => {
   const queryClient = useQueryClient();
 
-  // Fetch users using React Query
   const {
     data: users = [],
     isLoading,
@@ -36,7 +33,6 @@ const UserTable = () => {
     queryFn: fetchUsers,
   });
 
-  // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: deleteUser,
     onSuccess: () => {
@@ -45,9 +41,10 @@ const UserTable = () => {
   });
 
   const [search, setSearch] = useState("");
+  const [userList, setUserList] = useState(users);
 
-  const filteredUsers = useMemo(() => {
-    return (
+  useMemo(() => {
+    setUserList(
       users?.filter((user) =>
         user.name.toLowerCase().includes(search.toLowerCase())
       ) || []
@@ -60,7 +57,14 @@ const UserTable = () => {
     }
   };
 
-  // Table columns definition
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    const reorderedUsers = [...userList];
+    const [movedUser] = reorderedUsers.splice(result.source.index, 1);
+    reorderedUsers.splice(result.destination.index, 0, movedUser);
+    setUserList(reorderedUsers);
+  };
+
   const columns = [
     { accessorKey: "id", header: "User ID" },
     { accessorKey: "name", header: "Name" },
@@ -68,8 +72,6 @@ const UserTable = () => {
     {
       accessorKey: "orders",
       header: "Orders",
-      // You can add custom rendering for orders count, for example:
-      //   cell: ({ getValue }) => getValue().length,
     },
     {
       accessorKey: "actions",
@@ -81,52 +83,71 @@ const UserTable = () => {
   ];
 
   const table = useReactTable({
-    data: filteredUsers,
+    data: userList,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
 
-  // Loading and error handling
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error loading users: {error.message}</p>;
 
   return (
     <div>
-      {/* Search Bar */}
       <input
         type="text"
         placeholder="Search users..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
-
-      <table border="1">
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th key={header.id}>
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="users">
+          {(provided) => (
+            <table
+              border="1"
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+            >
+              <thead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <th key={header.id}>
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {table.getRowModel().rows.map((row, index) => (
+                  <Draggable key={row.id} draggableId={row.id} index={index}>
+                    {(provided) => (
+                      <tr
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <td key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </tbody>
+            </table>
+          )}
+        </Droppable>
+      </DragDropContext>
     </div>
   );
 };

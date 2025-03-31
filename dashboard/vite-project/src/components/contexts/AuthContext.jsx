@@ -1,16 +1,30 @@
-import { createContext, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { createContext, useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
 
 export const AuthContext = createContext();
 
+const useAuth = () => {
+  return useQuery({
+    queryKey: ["auth"],
+    queryFn: async () => {
+      const response = await axios.get("/auth/me", {
+        withCredentials: true,
+      });
+      return response.data;
+    },
+    retry: false,
+  });
+};
+
 const AuthProvider = ({ children }) => {
   const [isAuth, setIsAuth] = useState(false);
+  const { data, error } = useAuth();
 
   const mutation = useMutation({
     mutationFn: async ({ email, password }) => {
       const { data } = await axios.post(
-        "http://localhost:3000/auth/signinDashboard",
+        "/auth/signinDashboard",
         { email, password },
         { withCredentials: true }
       );
@@ -26,8 +40,38 @@ const AuthProvider = ({ children }) => {
     },
   });
 
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await axios.post("/auth", {}, { withCredentials: true });
+    },
+    onSuccess: () => {
+      setIsAuth(false);
+      alert("Logged out successfully!");
+      window.location.href = "/"; // Redirect user
+    },
+    onError: (error) => {
+      alert(error.response?.data?.message || "Logout failed");
+    },
+  });
+
+  useEffect(() => {
+    if (data?.tokenExists) {
+      console.log("yahav");
+      setIsAuth(true);
+    } else if (error) {
+      setIsAuth(false);
+    }
+  }, [data, error]);
+
   return (
-    <AuthContext.Provider value={{ isAuth, setIsAuth, login: mutation.mutate }}>
+    <AuthContext.Provider
+      value={{
+        isAuth,
+        setIsAuth,
+        login: mutation.mutate,
+        logout: logoutMutation.mutate,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

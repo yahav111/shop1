@@ -3,7 +3,7 @@ import { AuthContext } from "../../contexts/AuthContext";
 import { Link } from "react-router";
 
 const SignIn = () => {
-  const { login } = useContext(AuthContext);
+  const { login, isAuth } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
