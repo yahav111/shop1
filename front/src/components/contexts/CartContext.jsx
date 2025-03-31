@@ -14,6 +14,7 @@ const CartProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const [totalPriceOrder, setTotalPriceOrde] = useState(0);
   const [isAuth, setIsAuth] = useState(false);
+  const [loadingSignin, setloadingSignin] = useState(false);
 
   const handleChange = (e) => {
     setUser({
@@ -54,9 +55,10 @@ const CartProvider = ({ children }) => {
       console.error("Logout failed:", error.response?.data || error.message);
     }
   };
-
   const handleSignIn = async (e) => {
     e.preventDefault();
+    setloadingSignin(true); // Start loading
+
     try {
       const response = await axios.post(
         "/auth/signin",
@@ -70,11 +72,13 @@ const CartProvider = ({ children }) => {
 
       if (response.data.message) {
         alert("Sign-in successful!");
-        setIsAuth(true)
+        setIsAuth(true);
       }
     } catch (err) {
       console.error("Sign-in failed", err);
-      setIsAuth(false)
+      setIsAuth(false);
+    } finally {
+      setloadingSignin(false);
     }
   };
 
@@ -109,11 +113,11 @@ const CartProvider = ({ children }) => {
         console.log(response.data, "fgfb");
 
         if (response.data.tokenExists) {
-          setIsAuth(true)
-        } 
+          setIsAuth(true);
+        }
       } catch (error) {
         console.log(error);
-        setIsAuth(false)
+        setIsAuth(false);
       }
     };
 
@@ -354,7 +358,8 @@ const CartProvider = ({ children }) => {
     handleUpdateUser,
     orders,
     totalPriceOrder,
-    isAuth
+    isAuth,
+    loadingSignin,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

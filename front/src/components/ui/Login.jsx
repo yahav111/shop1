@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { CartContext } from "../contexts/CartContext";
 
 const Login = () => {
-  const { handleChange, handleSignIn } = useContext(CartContext);
+  const { handleChange, handleSignIn, loadingSignin } = useContext(CartContext);
   return (
     <div className="font-[sans-serif] max-sm:px-4">
       <div className="min-h-screen flex flex-col items-center justify-center ">
@@ -130,9 +130,10 @@ const Login = () => {
               <button
                 onClick={handleSignIn}
                 type="button"
-                className="w-full shadow-xl py-2.5 px-4 text-sm tracking-wide rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+                className="w-full shadow-xl py-2.5 px-4 text-sm tracking-wide rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none disabled:opacity-50"
+                disabled={loadingSignin}
               >
-                Sign in
+                {loadingSignin ? "Signing in..." : "Sign in"}
               </button>
             </div>
           </div>

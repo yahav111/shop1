@@ -40,7 +40,6 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Root />}>
-
               {/* Private Routes */}
               <Route element={isAuth ? <Outlet /> : <Navigate to={"/"} />}>
                 <Route path="about" element={<About />} />
@@ -57,7 +56,7 @@ function App() {
 
               {/* Public Routes */}
               <Route
-                element={!isAuth ? <Outlet /> : <Navigate to={"/table"} />}
+                element={!isAuth ? <Outlet /> : <Navigate to={"/store"} />}
               >
                 <Route index element={<Login />} />
                 <Route path="signin" element={<Signin />} />
