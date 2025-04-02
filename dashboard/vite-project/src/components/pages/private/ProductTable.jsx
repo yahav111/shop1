@@ -7,12 +7,22 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import AddProductModal from "../../model/AddProductModal";
 
 const axiosInstance = axios.create({ withCredentials: true });
 
 const fetchProducts = async () => {
   const { data } = await axiosInstance.get("http://localhost:3000/products");
+  console.log(data);
+
   return data;
+};
+
+const updateProduct = async ({ productId, updatedProduct }) => {
+  await axiosInstance.put(
+    `http://localhost:3000/products/productId/${productId}`,
+    updatedProduct
+  );
 };
 
 const deleteProduct = async (productId) => {
@@ -30,15 +40,20 @@ const ProductTable = () => {
     queryFn: fetchProducts,
   });
 
-  const deleteProductMutation = useMutation({
-    mutationFn: deleteProduct,
-    onSuccess: () => {
-      queryClient.invalidateQueries(["products"]);
-    },
+  const updateProductMutation = useMutation({
+    mutationFn: updateProduct,
+    onSuccess: () => queryClient.invalidateQueries(["products"]),
   });
 
+  const deleteProductMutation = useMutation({
+    mutationFn: deleteProduct,
+    onSuccess: () => queryClient.invalidateQueries(["products"]),
+  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [orderedProducts, setOrderedProducts] = useState([]);
+  const [editMode, setEditMode] = useState(null);
+  const [editedData, setEditedData] = useState({});
 
   useMemo(() => {
     if (products) setOrderedProducts(products);
@@ -58,6 +73,23 @@ const ProductTable = () => {
     }
   };
 
+  const handleEdit = (product) => {
+    setEditMode(product.productId);
+    setEditedData(product);
+  };
+
+  const handleSave = (productId) => {
+    updateProductMutation.mutate({ productId, updatedProduct: editedData });
+    setEditMode(null);
+  };
+
+  const handleChange = (e, field) => {
+    setEditedData((prev) => ({
+      ...prev,
+      [field]: field === "price" ? Number(e.target.value) : e.target.value,
+    }));
+  };
+
   const handleDragEnd = (result) => {
     if (!result.destination) return;
     const newItems = [...orderedProducts];
@@ -68,27 +100,100 @@ const ProductTable = () => {
 
   const columns = [
     { accessorKey: "productId", header: "Product ID" },
-    { accessorKey: "title", header: "Title" },
-    { accessorKey: "price", header: "Price" },
-    { accessorKey: "category", header: "Category" },
+    {
+      accessorKey: "title",
+      header: "Title",
+      cell: ({ row }) =>
+        editMode === row.original.productId ? (
+          <input
+            type="text"
+            value={editedData.title}
+            onChange={(e) => handleChange(e, "title")}
+          />
+        ) : (
+          row.original.title
+        ),
+    },
+    {
+      accessorKey: "price",
+      header: "Price",
+      cell: ({ row }) =>
+        editMode === row.original.productId ? (
+          <input
+            type="number"
+            value={editedData.price}
+            onChange={(e) => handleChange(e, "price")}
+          />
+        ) : (
+          `$${row.original.price}`
+        ),
+    },
+    {
+      accessorKey: "category",
+      header: "Category",
+      cell: ({ row }) =>
+        editMode === row.original.productId ? (
+          <input
+            type="text"
+            value={editedData.category}
+            onChange={(e) => handleChange(e, "category")}
+          />
+        ) : (
+          row.original.category
+        ),
+    },
     {
       accessorKey: "image",
       header: "Image",
-      cell: ({ getValue }) => <img src={getValue()} alt="Product" width="50" />,
+      cell: ({ row }) =>
+        editMode === row.original.productId ? (
+          <input
+            type="text"
+            value={editedData.image}
+            onChange={(e) => handleChange(e, "image")}
+          />
+        ) : (
+          <img src={row.original.image} alt="Product" width="50" />
+        ),
     },
     {
       accessorKey: "rating",
       header: "Rating",
-      cell: ({ getValue }) => JSON.stringify(getValue()),
+      cell: ({ row }) =>
+        editMode === row.original.productId ? (
+          <input
+            type="number"
+            value={editedData.rating.rate} // Use rating.rate
+            onChange={(e) =>
+              setEditedData({
+                ...editedData,
+                rating: { ...editedData.rating, rate: e.target.value },
+              })
+            }
+          />
+        ) : (
+          `${row.original.rating.rate} ⭐ (${row.original.rating.count} reviews)`
+        ),
     },
     {
       accessorKey: "actions",
       header: "Actions",
-      cell: ({ row }) => (
-        <button onClick={() => handleDelete(row.original.productId)}>
-          Delete
-        </button>
-      ),
+      cell: ({ row }) =>
+        editMode === row.original.productId ? (
+          <>
+            <button onClick={() => handleSave(row.original.productId)}>
+              Save
+            </button>
+            <button onClick={() => setEditMode(null)}>Cancel</button>
+          </>
+        ) : (
+          <>
+            <button onClick={() => handleEdit(row.original)}>Edit</button>
+            <button onClick={() => handleDelete(row.original.productId)}>
+              Delete
+            </button>
+          </>
+        ),
     },
   ];
 
@@ -109,6 +214,16 @@ const ProductTable = () => {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
+
+      <div>
+        <button className="addProduct" onClick={() => setIsModalOpen(true)}>
+          Add Product
+        </button>
+        <AddProductModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+      </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <table border="1">
