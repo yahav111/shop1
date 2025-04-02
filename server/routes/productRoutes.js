@@ -1,5 +1,6 @@
 import express from "express";
 import Protect from "../middleware/protect.js";
+import upload from "../middleware/upload.js";
 import {
   getAllProducts,
   getUserCart,
@@ -10,6 +11,7 @@ import {
   getProductById,
   deleteProductuser,
   deleteProductById,
+  updateProductById,
 } from "../controllers/ProductControllers.js";
 
 const router = express.Router();
@@ -17,9 +19,11 @@ const router = express.Router();
 router.get("/", getAllProducts);
 router.get("/userId", Protect, getUserCart);
 router.get("/productId/:productId", getProductById);
+router.put("/productId/:productId", updateProductById);
+
 // create Only Product - Model Product (לא עגלת קניות)
 
-router.post("/", createProduct);
+router.post("/", upload.single("image"), createProduct);
 // create UserProducts when user add Product to the cart - Model UserProducts
 router.post("/addToCart", Protect, createUserProduct);
 

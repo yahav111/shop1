@@ -1,5 +1,16 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
+import cloudinary from "cloudinary";
+import multer from "multer";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const storage = multer.memoryStorage(); // שמירת הקובץ בזיכרון לצורך העלאה לענן
+const upload = multer({ storage }).single("image");
 
 export const getAllProducts = async (req, res) => {
   try {
@@ -74,33 +85,108 @@ export const getUserCart = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-    const { productId, title, price, description, category, image, rating } =
-      req.body;
+    // Validate request file
+    if (!req.file) {
+      return res.status(400).json({ error: "Empty or invalid image file" });
+    }
+    // Log detailed file information for debugging
+    console.log("File details:", {
+      fieldname: req.file.fieldname,
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      bufferLength: req.file.buffer.length,
+    });
 
+    // Validate required fields
+    const { productId, title, price, description, category, rating } = req.body;
+
+    const requiredFields = { productId, title, price, category };
+
+    const missingFields = Object.entries(requiredFields)
+      .filter(([_, value]) => value === undefined)
+      .map(([key]) => key);
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        error: "Missing required fields",
+        missingFields,
+      });
+    }
+    
+    console.log("Uploading to cloudinary")
+    console.log(req.file.buffer);
+
+    // Upload image to Cloudinary
+    const uploadResult = await uploadToCloudinary(req.file.buffer);
+
+    console.log(uploadResult)
+
+    // Create product in database
     const newProduct = await prisma.product.create({
       data: {
         productId,
         title,
-        price,
-        description,
+        price: parseFloat(price),
+        description: description || "",
         category,
-        image,
-        rating,
+        image: uploadResult.secure_url,
+        rating: {
+          create: rating || { rate: 0, count: 0 },
+        },
       },
     });
 
-    res.status(201).json(newProduct);
+    // Return success response
+    return res.status(201).json(newProduct);
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Error creating product", details: error.message });
+    console.error("Product creation error:", error);
+
+    // Handle specific error types
+    if (error.message && error.message.includes("Empty file")) {
+      return res.status(400).json({
+        error: "Empty file error from Cloudinary",
+        details: error.message,
+      });
+    }
+
+    // Generic error response
+    return res.status(500).json({
+      error: "Error creating product",
+      details: error.message,
+    });
   }
+};
+// Helper function to upload to Cloudinary
+const uploadToCloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    // Validate buffer before attempting upload
+    if (!buffer || buffer.length === 0) {
+      reject(new Error("Invalid or empty image buffer"));
+      return;
+    }
+    const uploadStream = cloudinary.v2.uploader.upload_stream(
+      { resource_type: "image" },
+      (error, result) => {
+        if (error) {
+          console.error("Cloudinary upload error:", error);
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+
+    uploadStream.end(buffer);
+  });
 };
 
 export const createUserProduct = async (req, res) => {
   try {
     const { title, price, description, category, image, rating, productId } =
       req.body;
+
+    console.log(title, "imageclouding");
 
     const userId = req.user.userId;
 
@@ -246,6 +332,24 @@ export const updateUserProduct = async (req, res) => {
       error: "Failed to update product quantity",
       details: error.message,
     });
+  }
+};
+
+export const updateProductById = async (req, res) => {
+  try {
+    const { productId } = req.params; // Get product ID from request parameters
+    const updateData = req.body; // Get the new product data from request body
+
+    const updatedProduct = await prisma.product.update({
+      where: { productId },
+      data: updateData, // Update all columns dynamically
+    });
+
+    res.json({ message: "Product updated successfully", updatedProduct });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Failed to update product", details: error.message });
   }
 };
 
