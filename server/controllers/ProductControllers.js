@@ -1,7 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 import cloudinary from "cloudinary";
-import multer from "multer";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -9,14 +8,13 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const storage = multer.memoryStorage(); // שמירת הקובץ בזיכרון לצורך העלאה לענן
-const upload = multer({ storage }).single("image");
-
 export const getAllProducts = async (req, res) => {
   try {
-    // const userId = req.cookies.authToken;
-    // console.log(userId, "userid");
-    const products = await prisma.product.findMany();
+    const products = await prisma.product.findMany({
+      include: {
+        category: true,
+      },
+    });
     res.json(products);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch products" });
@@ -27,7 +25,10 @@ export const getProductById = async (req, res) => {
   try {
     const { productId } = req.params; // Get productId from the route parameters
     const product = await prisma.product.findUnique({
-      where: { productId }, // Search for the product by productId
+      where: { productId },
+      include: {
+        category: true,
+      },
     });
 
     if (!product) {
@@ -70,9 +71,15 @@ export const getUserCart = async (req, res) => {
     // Get all products linked to the user
     const userProducts = await prisma.userProducts.findMany({
       where: { userId: userId },
-      include: { product: true }, // Include product details
+      include: { product: true },
+      include: {
+        product: {
+          include: {
+            category: true, // Nested include to get category with each product
+          },
+        },
+      },
     });
-
     res.status(200).json({ products: userProducts });
   } catch (error) {
     console.error("Error fetching user products:", error);
@@ -85,101 +92,83 @@ export const getUserCart = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-    // Validate request file
-    if (!req.file) {
-      return res.status(400).json({ error: "Empty or invalid image file" });
+    if (!req.file)
+      return res.status(400).json({ error: "Image file is required" });
+
+    const {
+      productId,
+      title,
+      price,
+      description = "",
+      category,
+      rating = { rate: 0, count: 0 },
+    } = req.body;
+
+    // Check required fields
+    if (!productId || !title || !price || !category) {
+      return res.status(400).json({ error: "Missing required fields" });
     }
-    // Log detailed file information for debugging
-    console.log("File details:", {
-      fieldname: req.file.fieldname,
-      originalname: req.file.originalname,
-      mimetype: req.file.mimetype,
-      size: req.file.size,
-      bufferLength: req.file.buffer.length,
-    });
 
-    // Validate required fields
-    const { productId, title, price, description, category, rating } = req.body;
-
-    const requiredFields = { productId, title, price, category };
-
-    const missingFields = Object.entries(requiredFields)
-      .filter(([_, value]) => value === undefined)
-      .map(([key]) => key);
-
-    if (missingFields.length > 0) {
-      return res.status(400).json({
-        error: "Missing required fields",
-        missingFields,
-      });
-    }
-    
-    console.log("Uploading to cloudinary")
-    console.log(req.file.buffer);
-
-    // Upload image to Cloudinary
-    const uploadResult = await uploadToCloudinary(req.file.buffer);
-
-    console.log(uploadResult)
+    // Upload image to Cloudinary in parallel
+    const uploadPromise = uploadToCloudinary(req.file.buffer);
 
     // Create product in database
+    const [uploadResult] = await Promise.all([uploadPromise]);
+
+    // Handle category as a relation
+    let categoryData;
+    if (typeof category === "string") {
+      // If category is a string (name), check if it exists in the database
+      categoryData = await prisma.category.findUnique({
+        where: { name: category },
+      });
+
+      if (!categoryData) {
+        return res.status(400).json({ error: "Category not found" });
+      }
+    } else if (typeof category === "number") {
+      // If category is passed as an ID
+      categoryData = await prisma.category.findUnique({
+        where: { id: category },
+      });
+
+      if (!categoryData) {
+        return res.status(400).json({ error: "Category ID not found" });
+      }
+    } else {
+      return res.status(400).json({ error: "Invalid category value" });
+    }
+
+    // Create the new product with category relation
     const newProduct = await prisma.product.create({
       data: {
         productId,
         title,
         price: parseFloat(price),
-        description: description || "",
-        category,
+        description,
+        category: { connect: { id: categoryData.id } }, // Connect product to category
         image: uploadResult.secure_url,
-        rating: {
-          create: rating || { rate: 0, count: 0 },
-        },
+        rating, // Just assign the JSON
       },
     });
 
-    // Return success response
-    return res.status(201).json(newProduct);
+    res.status(201).json(newProduct);
   } catch (error) {
-    console.error("Product creation error:", error);
-
-    // Handle specific error types
-    if (error.message && error.message.includes("Empty file")) {
-      return res.status(400).json({
-        error: "Empty file error from Cloudinary",
-        details: error.message,
-      });
-    }
-
-    // Generic error response
-    return res.status(500).json({
-      error: "Error creating product",
-      details: error.message,
-    });
+    res
+      .status(500)
+      .json({ error: "Error creating product", details: error.message });
   }
 };
-// Helper function to upload to Cloudinary
-const uploadToCloudinary = (buffer) => {
-  return new Promise((resolve, reject) => {
-    // Validate buffer before attempting upload
-    if (!buffer || buffer.length === 0) {
-      reject(new Error("Invalid or empty image buffer"));
-      return;
-    }
-    const uploadStream = cloudinary.v2.uploader.upload_stream(
-      { resource_type: "image" },
-      (error, result) => {
-        if (error) {
-          console.error("Cloudinary upload error:", error);
-          reject(error);
-        } else {
-          resolve(result);
-        }
-      }
-    );
 
-    uploadStream.end(buffer);
+const uploadToCloudinary = (buffer) =>
+  new Promise((resolve, reject) => {
+    if (!buffer?.length) return reject(new Error("Invalid image buffer"));
+    cloudinary.v2.uploader
+      .upload_stream({ resource_type: "image" }, (error, result) =>
+        error ? reject(error) : resolve(result)
+      )
+      .end(buffer);
   });
-};
 
 export const createUserProduct = async (req, res) => {
   try {
@@ -272,7 +261,7 @@ export const createUserProduct = async (req, res) => {
 
 export const updateUserProduct = async (req, res) => {
   try {
-    const { productId, quantity } = req.body; // Get the productId and quantity from the request body
+    const { productId, quantity } = req.body;
 
     if (!productId || !quantity) {
       return res.status(400).json({
@@ -281,7 +270,7 @@ export const updateUserProduct = async (req, res) => {
     }
 
     const userId = req.user.userId;
-    // Check if the user exists
+
     const existingUser = await prisma.user.findUnique({
       where: { id: userId },
     });
@@ -290,7 +279,6 @@ export const updateUserProduct = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Check if the product exists in the user's cart
     let userProduct = await prisma.userProducts.findUnique({
       where: {
         productId_userId: {
@@ -300,30 +288,32 @@ export const updateUserProduct = async (req, res) => {
       },
     });
 
-    // If the user does not have the product in their cart, add it with the given quantity
     if (!userProduct) {
       userProduct = await prisma.userProducts.create({
         data: {
           userId: existingUser.id,
           productId,
-          quantity, // Set the quantity as provided in the request
+          quantity,
         },
       });
     } else {
-      // If the product is already in the cart, set the quantity directly to the provided value
       userProduct = await prisma.userProducts.update({
         where: {
           id: userProduct.id,
         },
         data: {
-          quantity, // Directly set the new quantity (no addition)
+          quantity,
         },
       });
     }
 
-    // Respond with the updated or created product
+    const fullProduct = await prisma.product.findUnique({
+      where: { productId },
+      include: { category: true },
+    });
+
     res.status(201).json({
-      product: { quantity: userProduct.quantity },
+      product: { ...fullProduct, quantity: userProduct.quantity },
       message: "Product quantity updated successfully",
     });
   } catch (error) {
@@ -337,72 +327,51 @@ export const updateUserProduct = async (req, res) => {
 
 export const updateProductById = async (req, res) => {
   try {
-    const { productId } = req.params; // Get product ID from request parameters
-    const updateData = req.body; // Get the new product data from request body
+    const { productId } = req.params;
+    let updateData = req.body;
+    const { file } = req;
+
+    let updatedImage = null;
+    if (file) {
+      const uploadResult = await uploadToCloudinary(file.buffer);
+      updatedImage = uploadResult.secure_url;
+    }
+
+    if (updateData.price) {
+      updateData.price = parseFloat(updateData.price);
+    }
 
     const updatedProduct = await prisma.product.update({
       where: { productId },
-      data: updateData, // Update all columns dynamically
+      data: {
+        ...updateData,
+        image: updatedImage || undefined,
+        categoryId: updateData.categoryId || undefined,
+      },
+      include: {
+        category: true,
+      },
     });
 
     res.json({ message: "Product updated successfully", updatedProduct });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Failed to update product", details: error.message });
+    console.error("Error updating product:", error);
+    res.status(500).json({
+      error: "Failed to update product",
+      details: error.message,
+    });
   }
 };
-
-// export const updateProduct = async (req, res) => {
-//   try {
-//     const { userId, productId, quantity } = req.body;
-
-//     if (!userId || !productId || quantity == null) {
-//       return res
-//         .status(400)
-//         .json({ error: "userId, productId, and quantity are required" });
-//     }
-
-//     const existingUserProduct = await prisma.userProducts.findUnique({
-//       where: {
-//         productId_userId: { productId, userId },
-//       },
-//     });
-
-//     if (!existingUserProduct) {
-//       return res.status(404).json({ error: "Product not found for this user" });
-//     }
-
-//     const updatedUserProduct = await prisma.userProducts.update({
-//       where: {
-//         productId_userId: { productId, userId },
-//       },
-//       data: { quantity },
-//     });
-
-//     res.status(200).json({
-//       product: updatedUserProduct,
-//       message: "Product quantity updated successfully",
-//     });
-//   } catch (error) {
-//     console.error("Error updating product quantity:", error);
-//     res.status(500).json({
-//       error: "Failed to update product quantity",
-//       details: error.message,
-//     });
-//   }
-// };
 
 export const deleteProductuser = async (req, res) => {
   try {
     const { productId } = req.body;
-
     const userId = req.user.userId;
+
     if (!productId) {
       return res.status(400).json({ error: "ProductId is required" });
     }
 
-    // Check if the user exists
     const existingUser = await prisma.user.findUnique({
       where: { id: userId },
     });
@@ -411,7 +380,6 @@ export const deleteProductuser = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Check if the product exists in the user's cart
     const userProduct = await prisma.userProducts.findUnique({
       where: {
         productId_userId: {
@@ -425,14 +393,18 @@ export const deleteProductuser = async (req, res) => {
       return res.status(404).json({ error: "Product not found in user cart" });
     }
 
-    // Delete the product from the user's cart
-    await prisma.userProducts.delete({
+    const deleted = await prisma.userProducts.delete({
       where: { id: userProduct.id },
+      include: {
+        product: {
+          include: { category: true },
+        },
+      },
     });
 
-    return res.status(200).json({
+    res.status(200).json({
       message: "Product removed from cart successfully",
-      productId,
+      product: deleted.product,
     });
   } catch (error) {
     console.error("Error deleting product:", error);
@@ -444,7 +416,8 @@ export const deleteProductuser = async (req, res) => {
 };
 
 export const clearCart = async (req, res) => {
-  const { userId } = req.body;
+  const userId = req.user.userId;
+
   try {
     const userProducts = await prisma.userProducts.findMany({
       where: { userId },
@@ -461,8 +434,9 @@ export const clearCart = async (req, res) => {
     res.status(204).send();
   } catch (error) {
     console.error("Error clearing cart:", error);
-    res
-      .status(500)
-      .json({ error: "Failed to clear cart", details: error.message });
+    res.status(500).json({
+      error: "Failed to clear cart",
+      details: error.message,
+    });
   }
 };

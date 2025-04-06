@@ -19,7 +19,7 @@ const router = express.Router();
 router.get("/", getAllProducts);
 router.get("/userId", Protect, getUserCart);
 router.get("/productId/:productId", getProductById);
-router.put("/productId/:productId", updateProductById);
+router.put("/productId/:productId", upload.single("image"), updateProductById);
 
 // create Only Product - Model Product (לא עגלת קניות)
 

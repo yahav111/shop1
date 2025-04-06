@@ -25,6 +25,11 @@ model User {
     role           String         @default("user")  
   isActive         Boolean        @default(true)    
 }
+model Category {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  products Product[] 
+}
 
 model Product {
   id          String   @id @default(uuid())  
@@ -32,9 +37,11 @@ model Product {
   title       String
   price       Float
   description String
-  category    String
   image       String
   rating      Json
+
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id])
 
   userProducts UserProducts[] 
   orderItems   OrderItem[]  
