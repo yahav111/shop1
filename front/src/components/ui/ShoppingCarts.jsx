@@ -109,11 +109,11 @@ const ShoppingCarts = () => {
                                           : product.title}
                                       </p>
                                     </h3>
-                                    <p className="ml-4">
+                                    {/* <p className="ml-4">
                                       {product.product?.price
                                         ? product.product.price
                                         : product.price}
-                                    </p>
+                                    </p> */}
                                   </div>
                                   <p className="mt-1 text-sm text-gray-500">
                                     Salmon

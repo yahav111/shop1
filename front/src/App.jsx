@@ -18,6 +18,7 @@ import Orders from "./components/pages/public/Orders";
 import TanStackTableExample from "./components/pages/public/Table";
 import { useContext } from "react";
 import { CartContext } from "./components/contexts/CartContext";
+import CategoryProducts from "./components/pages/public/CategoryProducts ";
 
 // Hoisting
 
@@ -51,6 +52,7 @@ function App() {
                 <Route path="cancel" element={<Cancel />} />
                 <Route path="UpdateUser" element={<UpdateUser />} />
                 <Route path="Orders" element={<Orders />} />
+                <Route path="/category/:id" element={<CategoryProducts />} />
                 <Route path="table" element={<TanStackTableExample />} />
               </Route>
 

@@ -9,10 +9,11 @@ function Product({ product }) {
       <Link to={`/product/${product.id}`}>
         <div className="max-w-sm bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
           <img
-            className="rounded-t-lg"
+            className="h-[200px] w-[200px] object-cover rounded-t-lg"
             src={product.image}
             // alt={product.title}
           />
+
           <div className="p-5">
             <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
               {product.title}
