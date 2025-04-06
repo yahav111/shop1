@@ -8,23 +8,46 @@ import {
 } from "@tanstack/react-table";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import AddProductModal from "../../model/AddProductModal";
+import ProductEditModal from "../../model/ProductEditModal ";
 
 const axiosInstance = axios.create({ withCredentials: true });
 
+// Fetch products from the server
 const fetchProducts = async () => {
   const { data } = await axiosInstance.get("http://localhost:3000/products");
   console.log(data);
-
   return data;
 };
 
+// Update product using FormData
 const updateProduct = async ({ productId, updatedProduct }) => {
+  console.log(productId, "productId");
+  console.log(updatedProduct, "updatedProduct");
+
+  // Create a new FormData object
+  const formData = new FormData();
+
+  // Append each field from updatedProduct to the FormData
+  for (const key in updatedProduct) {
+    if (updatedProduct[key] !== undefined && updatedProduct[key] !== null) {
+      formData.append(key, updatedProduct[key]);
+    }
+  }
+  console.log(formData, "formData");
+
+  // Send the FormData with PUT request
   await axiosInstance.put(
     `http://localhost:3000/products/productId/${productId}`,
-    updatedProduct
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
   );
 };
 
+// Delete product
 const deleteProduct = async (productId) => {
   await axiosInstance.delete(`http://localhost:3000/products/${productId}`);
 };
@@ -40,6 +63,7 @@ const ProductTable = () => {
     queryFn: fetchProducts,
   });
 
+  // Mutations for updating and deleting products
   const updateProductMutation = useMutation({
     mutationFn: updateProduct,
     onSuccess: () => queryClient.invalidateQueries(["products"]),
@@ -49,16 +73,20 @@ const ProductTable = () => {
     mutationFn: deleteProduct,
     onSuccess: () => queryClient.invalidateQueries(["products"]),
   });
+
+  // State for modal visibility and search
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // for the Edit Modal
   const [search, setSearch] = useState("");
   const [orderedProducts, setOrderedProducts] = useState([]);
-  const [editMode, setEditMode] = useState(null);
   const [editedData, setEditedData] = useState({});
 
+  // UseMemo for managing ordered products
   useMemo(() => {
     if (products) setOrderedProducts(products);
   }, [products]);
 
+  // Filter products based on search input
   const filteredProducts = useMemo(() => {
     return (
       orderedProducts?.filter((product) =>
@@ -67,29 +95,47 @@ const ProductTable = () => {
     );
   }, [orderedProducts, search]);
 
+  // Handle deleting a product
   const handleDelete = (productId) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       deleteProductMutation.mutate(productId);
     }
   };
 
+  // Handle opening the edit modal and setting the product data for editing
   const handleEdit = (product) => {
-    setEditMode(product.productId);
     setEditedData(product);
+    setIsEditModalOpen(true); // Open the Edit Modal
   };
 
-  const handleSave = (productId) => {
-    updateProductMutation.mutate({ productId, updatedProduct: editedData });
-    setEditMode(null);
+  // Handle saving the edited product (sending FormData)
+  const handleSave = () => {
+    updateProductMutation.mutate({
+      productId: editedData.productId,
+      updatedProduct: editedData,
+    });
+    setIsEditModalOpen(false); // Close the modal after saving
   };
 
+  // Handle form input changes
   const handleChange = (e, field) => {
+    let value = e.target.value;
+
+    // המרה למספר אם מדובר בשדה "price"
+    if (field === "price") {
+      value = parseFloat(value);
+      if (isNaN(value)) value = ""; // מניעת שגיאות במקרה של קלט ריק
+    } else if (field === "image") {
+      value = e.target.files[0];
+    }
+
     setEditedData((prev) => ({
       ...prev,
-      [field]: field === "price" ? Number(e.target.value) : e.target.value,
+      [field]: value,
     }));
   };
 
+  // Handle drag-and-drop reordering of products
   const handleDragEnd = (result) => {
     if (!result.destination) return;
     const newItems = [...orderedProducts];
@@ -98,102 +144,50 @@ const ProductTable = () => {
     setOrderedProducts(newItems);
   };
 
+  // Define the table columns
   const columns = [
     { accessorKey: "productId", header: "Product ID" },
     {
       accessorKey: "title",
       header: "Title",
-      cell: ({ row }) =>
-        editMode === row.original.productId ? (
-          <input
-            type="text"
-            value={editedData.title}
-            onChange={(e) => handleChange(e, "title")}
-          />
-        ) : (
-          row.original.title
-        ),
+      cell: ({ row }) => row.original.title,
     },
     {
       accessorKey: "price",
       header: "Price",
-      cell: ({ row }) =>
-        editMode === row.original.productId ? (
-          <input
-            type="number"
-            value={editedData.price}
-            onChange={(e) => handleChange(e, "price")}
-          />
-        ) : (
-          `$${row.original.price}`
-        ),
+      cell: ({ row }) => Number(row.original.price).toFixed(2),
     },
     {
       accessorKey: "category",
       header: "Category",
-      cell: ({ row }) =>
-        editMode === row.original.productId ? (
-          <input
-            type="text"
-            value={editedData.category}
-            onChange={(e) => handleChange(e, "category")}
-          />
-        ) : (
-          row.original.category
-        ),
+      cell: ({ row }) => row.original.category?.name,
     },
+    ,
+    ,
     {
       accessorKey: "image",
       header: "Image",
-      cell: ({ row }) =>
-        editMode === row.original.productId ? (
-          <input
-            type="text"
-            value={editedData.image}
-            onChange={(e) => handleChange(e, "image")}
-          />
-        ) : (
-          <img src={row.original.image} alt="Product" width="50" />
-        ),
+      cell: ({ row }) => (
+        <img src={row.original.image} alt="Product" width="50" />
+      ),
     },
     {
       accessorKey: "rating",
       header: "Rating",
       cell: ({ row }) =>
-        editMode === row.original.productId ? (
-          <input
-            type="number"
-            value={editedData.rating.rate} // Use rating.rate
-            onChange={(e) =>
-              setEditedData({
-                ...editedData,
-                rating: { ...editedData.rating, rate: e.target.value },
-              })
-            }
-          />
-        ) : (
-          `${row.original.rating.rate} ⭐ (${row.original.rating.count} reviews)`
-        ),
+        `${row.original.rating.rate} ⭐ (${row.original.rating.count} reviews)`,
     },
     {
       accessorKey: "actions",
       header: "Actions",
-      cell: ({ row }) =>
-        editMode === row.original.productId ? (
-          <>
-            <button onClick={() => handleSave(row.original.productId)}>
-              Save
-            </button>
-            <button onClick={() => setEditMode(null)}>Cancel</button>
-          </>
-        ) : (
-          <>
-            <button onClick={() => handleEdit(row.original)}>Edit</button>
-            <button onClick={() => handleDelete(row.original.productId)}>
-              Delete
-            </button>
-          </>
-        ),
+      cell: ({ row }) => (
+        <>
+          <button onClick={() => handleEdit(row.original)}>Edit</button>
+          <button onClick={() => handleDelete(row.original.productId)}>
+            Delete
+          </button>
+        </>
+      ),
     },
   ];
 
@@ -208,6 +202,7 @@ const ProductTable = () => {
 
   return (
     <div>
+      {/* Search input */}
       <input
         type="text"
         placeholder="Search products..."
@@ -216,6 +211,7 @@ const ProductTable = () => {
       />
 
       <div>
+        {/* Add Product Button */}
         <button className="addProduct" onClick={() => setIsModalOpen(true)}>
           Add Product
         </button>
@@ -225,6 +221,7 @@ const ProductTable = () => {
         />
       </div>
 
+      {/* Drag-and-Drop Table */}
       <DragDropContext onDragEnd={handleDragEnd}>
         <table border="1">
           <thead>
@@ -274,6 +271,15 @@ const ProductTable = () => {
           </Droppable>
         </table>
       </DragDropContext>
+
+      {/* The Edit Product Modal */}
+      <ProductEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        product={editedData}
+        onChange={handleChange}
+        onSave={handleSave}
+      />
     </div>
   );
 };

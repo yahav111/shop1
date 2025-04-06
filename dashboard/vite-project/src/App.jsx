@@ -7,6 +7,7 @@ import Nav from "./components/section/Nav";
 import { useContext } from "react";
 import { AuthContext } from "./components/contexts/AuthContext";
 import SignIn from "./components/pages/private/SignIn";
+import CategoryTable from "./components/pages/private/CategoryTable";
 function Root() {
   return (
     <>
@@ -27,6 +28,7 @@ const App = () => {
               <Route path="/ProductTable" element={<PoductTable />} />
               <Route path="/OrderTable" element={<OrdersTable />} />
               <Route path="/UserTable" element={<UserTable />} />
+              <Route path="/CategoryTable" element={<CategoryTable />} />
             </Route>
 
             <Route

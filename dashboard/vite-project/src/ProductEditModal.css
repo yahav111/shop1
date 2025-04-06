@@ -1,0 +1,101 @@
+/* Modal Styling */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Overlay background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* Ensure modal stays on top */
+}
+
+.modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 8px;
+  width: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Title styling */
+h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+/* Label styling */
+label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  display: block;
+}
+
+/* Input field styling */
+input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+/* Button styling */
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+/* Save button (handleSubmit) */
+.handleSubmit {
+  background-color: #007bff;
+  color: white;
+}
+
+.handleSubmit:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+/* Cancel button (onClose) */
+.onClose {
+  background-color: #ccc;
+  color: #333;
+  margin-left: 10px;
+}
+
+.onClose:hover {
+  background-color: #999;
+  transform: scale(1.05);
+}
+
+button + button {
+  margin-left: 10px;
+}
+
+/* Footer for buttons */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+/* Modal fade-in animation */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

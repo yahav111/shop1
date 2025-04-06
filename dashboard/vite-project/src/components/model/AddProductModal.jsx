@@ -34,7 +34,7 @@ const AddProductModal = ({ isOpen, onClose }) => {
   });
 
   const onSubmit = (data) => {
-    if (!data.title || !data.price || !image) {
+    if (!data.title || !data.price || !image || !data.category) {
       alert("Please fill in all required fields!");
       return;
     }
@@ -43,10 +43,15 @@ const AddProductModal = ({ isOpen, onClose }) => {
     Object.entries(data).forEach(([key, value]) => {
       if (key === "rating") {
         formData.append("rating", JSON.stringify({ average: value, count: 0 }));
+      } else if (key === "category") {
+        // Assuming `category` is a string representing the category name
+        // You should look up the category ID or pass it if you already have it.
+        formData.append("category", value); // Or map to categoryId if necessary
       } else {
         formData.append(key, value);
       }
     });
+
     if (image) formData.append("image", image);
 
     addProductMutation.mutate(formData);
@@ -72,8 +77,10 @@ const AddProductModal = ({ isOpen, onClose }) => {
           <input
             type="number"
             placeholder="Price"
-            {...register("price", { required: true })}
+            step="0.01"
+            {...register("price", { required: true, valueAsNumber: true })}
           />
+
           <input
             type="text"
             placeholder="Description"
